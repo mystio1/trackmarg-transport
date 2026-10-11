@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
-  Alert, Box, Button, Divider, GridLegacy as Grid, Paper, Stack, TextField, Typography, IconButton,
-  FormControl, InputLabel, Select, MenuItem, useTheme,
+  Alert, Box, Button, Dialog, DialogContent, DialogTitle, Divider, GridLegacy as Grid, Paper, Stack, TextField, Typography, IconButton,
+  FormControl, InputLabel, Select, MenuItem, useTheme, useMediaQuery,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import {
-  Save, Add, Delete, AccountBalance,
+  Save, Add, Delete, AccountBalance, Close,
   PhotoCamera, AutoFixHigh, Security, Image as ImageIcon, QrCode2, Receipt,
 } from '@mui/icons-material';
 import { useAppContext } from '../context/AppContext';
@@ -67,7 +67,7 @@ function buildDemoBillHtml(form: Branding): string {
       <td style="padding:5px 7px;border:1px solid #c8b8a2;font-size:9.5pt;text-align:right;">₹${t.amount}</td>
     </tr>`).join('');
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=800"/><style>
     * { box-sizing:border-box; } body { margin:0; padding:12px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:10pt; color:#1a1a1a; background:#fff; }
     .page { width:100%; max-width:190mm; margin:0 auto; position:relative; background:#fff; }
     ${logoUrl ? `.page::before { content:''; position:absolute; bottom:20mm; left:10mm; width:85mm; height:52mm; background:url('${logoUrl}') center/contain no-repeat; opacity:0.05; pointer-events:none; z-index:0; }` : ''}
@@ -172,6 +172,7 @@ const newBankAccount = (): BankAccount => ({
 
 const BrandingSettings = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const toast = useToast();
   const { branding, updateBranding, user, updateMyEmail } = useAppContext();
   const [form, setForm] = useState<Branding>(EMPTY);
@@ -621,21 +622,31 @@ const BrandingSettings = () => {
         </Box>
       </Paper>
 
-      {showPreview && (
-        <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
-          <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700, mb: 1 }}>Bill Preview</Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-            This is how your bill will look with demo data. Your uploaded logo, signature, bank details, and branding colors are shown as they'll appear on a real invoice.
+      <Dialog
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        fullScreen={isMobile}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: 'background.paper' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 0 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>Bill Preview</Typography>
+          <IconButton onClick={() => setShowPreview(false)} size="small"><Close /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: { xs: 1, sm: 3 }, pt: { xs: 1, sm: 2 } }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2, px: 1 }}>
+            Demo invoice with your branding, logo, signature &amp; bank details.
           </Typography>
-          <Box sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2, overflow: 'hidden', bgcolor: '#fff' }}>
+          <Box sx={{ bgcolor: '#fff', borderRadius: 1, overflow: 'hidden', border: `1px solid ${theme.palette.divider}` }}>
             <iframe
               title="Bill Preview"
               srcDoc={buildDemoBillHtml(form)}
-              style={{ width: '100%', height: 820, border: 'none', display: 'block' }}
+              style={{ width: '100%', height: isMobile ? 'calc(100vh - 140px)' : 820, border: 'none', display: 'block' }}
             />
           </Box>
-        </Paper>
-      )}
+        </DialogContent>
+      </Dialog>
 
       <ImageCropDialog
         open={Boolean(cropTarget)}
