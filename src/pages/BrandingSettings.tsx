@@ -7,7 +7,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material';
 import {
   Save, Add, Delete, AccountBalance,
-  PhotoCamera, AutoFixHigh, Security, Image as ImageIcon, QrCode2,
+  PhotoCamera, AutoFixHigh, Security, Image as ImageIcon, QrCode2, Receipt,
 } from '@mui/icons-material';
 import { useAppContext } from '../context/AppContext';
 import type { Branding, BankAccount } from '../types';
@@ -33,6 +33,138 @@ type HeaderImageField = 'headerLeftImageDataUrl' | 'headerRightImageDataUrl';
 const HEADER_IMAGE_PREVIEW_WIDTH = 160;
 const HEADER_IMAGE_PREVIEW_HEIGHT = Math.round(HEADER_IMAGE_PREVIEW_WIDTH / HEADER_IMAGE_ASPECT);
 
+function buildDemoBillHtml(form: Branding): string {
+  const esc = (v: string | number) =>
+    String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  const primaryColor = form.primaryColor || '#0B2B5E';
+  const accentColor = form.accentColor || '#F0B90B';
+  const companyName = (form.companyName || 'Your Company Name').toUpperCase();
+  const tagline = form.tagline || 'Transport & Logistics Solutions';
+  const proprietorLine = form.proprietorName ? `Prop.: ${form.proprietorName}` : '';
+  const phones = [form.phone1, form.phone2].filter(Boolean).join(' &nbsp;/&nbsp; ');
+  const contactLine = [proprietorLine, phones ? `Mob.: ${phones}` : ''].filter(Boolean).join(' &nbsp;&nbsp;|&nbsp;&nbsp; ');
+  const addressLine = form.address || '';
+  const logoUrl = form.logoDataUrl || '';
+  const signatureUrl = form.signatureDataUrl || '';
+  const headerLeftUrl = form.headerLeftImageDataUrl || '';
+  const headerRightUrl = form.headerRightImageDataUrl || '';
+  const upiQrUrl = form.upiQrImageDataUrl || '';
+  const bank = form.bankAccounts?.[0];
+
+  const demoTrips = [
+    { date: '15/10/2026', pickup: 'Mumbai', drop: 'Pune', paid: '500.00', amount: '8,500.00' },
+    { date: '16/10/2026', pickup: 'Pune', drop: 'Nashik', paid: '0.00', amount: '6,200.00' },
+    { date: '18/10/2026', pickup: 'Nashik', drop: 'Mumbai', paid: '1,000.00', amount: '9,000.00' },
+  ];
+
+  const rowsHtml = demoTrips.map((t, i) => `
+    <tr style="background:${i % 2 === 0 ? '#fff' : '#fdf6f0'};">
+      <td style="padding:5px 7px;border:1px solid #c8b8a2;font-size:9.5pt;text-align:center;">${t.date}</td>
+      <td style="padding:5px 7px;border:1px solid #c8b8a2;font-size:9.5pt;">${t.pickup}</td>
+      <td style="padding:5px 7px;border:1px solid #c8b8a2;font-size:9.5pt;">${t.drop}</td>
+      <td style="padding:5px 7px;border:1px solid #c8b8a2;font-size:9.5pt;text-align:right;">₹${t.paid}</td>
+      <td style="padding:5px 7px;border:1px solid #c8b8a2;font-size:9.5pt;text-align:right;">₹${t.amount}</td>
+    </tr>`).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
+    * { box-sizing:border-box; } body { margin:0; padding:12px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:10pt; color:#1a1a1a; background:#fff; }
+    .page { width:100%; max-width:190mm; margin:0 auto; position:relative; background:#fff; }
+    ${logoUrl ? `.page::before { content:''; position:absolute; bottom:20mm; left:10mm; width:85mm; height:52mm; background:url('${logoUrl}') center/contain no-repeat; opacity:0.05; pointer-events:none; z-index:0; }` : ''}
+    .page > * { position:relative; z-index:1; }
+    .accent-bar { height:4px; background:${accentColor}; margin-bottom:16px; }
+    .header { display:flex; align-items:center; justify-content:center; gap:10px; padding-bottom:14px; margin-bottom:16px; border-bottom:3px double #CBD5E1; }
+    .header-image-slot { flex:0 0 30mm; width:30mm; height:22.5mm; display:flex; align-items:center; justify-content:center; }
+    .header-image-slot img { max-width:100%; max-height:100%; object-fit:contain; }
+    .header-text { flex:1; text-align:center; min-width:0; }
+    .company-name { font-size:24pt; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; color:${primaryColor}; }
+    .tagline { font-size:9.5pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#8a8a8a; margin-top:4px; }
+    .contact-line { font-size:9pt; color:#555; margin-top:6px; font-weight:500; }
+    .address-line { font-size:8.5pt; color:#777; margin-top:2px; }
+    .info-grid { display:flex; gap:24px; margin-bottom:20px; }
+    .info-col { flex:1; }
+    .info-col table { width:100%; border-collapse:collapse; }
+    .info-col td { font-size:9.5pt; padding:2px 0; vertical-align:top; color:#333; }
+    .info-col td.label { color:#666; font-weight:600; width:78px; white-space:nowrap; padding-right:8px; }
+    .info-col td.strong { font-weight:700; color:${primaryColor}; }
+    .tt { width:100%; border-collapse:collapse; margin-bottom:16px; font-size:9pt; }
+    .tt th { background:${primaryColor}; color:#fff; padding:7px 8px; border:1px solid #E2E8F0; font-weight:700; text-align:center; }
+    .tt th.l { text-align:left; } .tt th.r, .tt td.r { text-align:right; }
+    .tt td { padding:6px 8px; border:1px solid #E2E8F0; color:#1a1a1a; }
+    .subtotal-row td { font-weight:700; color:${primaryColor}; }
+    .words-row { display:flex; gap:14px; align-items:flex-start; margin-bottom:16px; }
+    .words-col { flex:1; min-width:0; }
+    .words-box { padding:8px 10px; background:#fcfcfc; border:1px dashed #ddd; border-radius:4px; font-size:9pt; color:#555; }
+    .words-box b { color:#1a1a1a; }
+    .upi-qr-box { flex:0 0 90px; width:90px; height:90px; display:flex; align-items:center; justify-content:center; }
+    .upi-qr-box img { max-width:100%; max-height:100%; object-fit:contain; }
+    .footer-row { display:flex; gap:24px; border-top:2px double #CBD5E1; padding-top:14px; font-size:9pt; color:#444; }
+    .bank-col { flex:1; }
+    .bank-title { font-weight:700; color:${primaryColor}; margin-bottom:4px; font-size:9.5pt; }
+    .bank-col table { width:100%; font-size:8.5pt; }
+    .bank-col td.label { color:#666; font-weight:600; width:95px; }
+    .bank-col td.strong { font-weight:700; color:#111; }
+    .sign-col { flex:0 0 160px; text-align:right; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; }
+    .for-company { font-weight:600; color:#333; font-style:italic; margin-bottom:8px; }
+    .sign-img { max-width:140px; max-height:50px; object-fit:contain; margin-bottom:4px; }
+    .sign-line { font-weight:700; border-top:1px solid #666; padding-top:4px; width:140px; margin-left:auto; text-align:center; font-size:8.5pt; }
+    .footer-note { text-align:center; margin-top:18px; font-size:8.5pt; color:#888; font-style:italic; }
+    .demo-badge { position:absolute; top:8px; right:8px; background:${accentColor}; color:${primaryColor}; font-size:7.5pt; font-weight:800; padding:3px 10px; border-radius:3px; letter-spacing:1px; text-transform:uppercase; }
+  </style></head><body><div class="page">
+  <div class="demo-badge">Demo Preview</div>
+  <div class="accent-bar"></div>
+  <div class="header">
+    <div class="header-image-slot">${headerLeftUrl ? `<img src="${headerLeftUrl}" />` : ''}</div>
+    <div class="header-text">
+      <div class="company-name">${esc(companyName)}</div>
+      <div class="tagline">${esc(tagline)}</div>
+      ${contactLine ? `<div class="contact-line">${contactLine}</div>` : ''}
+      ${addressLine ? `<div class="address-line">${esc(addressLine)}</div>` : ''}
+    </div>
+    <div class="header-image-slot">${headerRightUrl ? `<img src="${headerRightUrl}" />` : ''}</div>
+  </div>
+  <div class="info-grid">
+    <div class="info-col"><table>
+      <tr><td class="label">M/s.:</td><td class="strong">Demo Customer</td></tr>
+      <tr><td class="label">Address:</td><td>123 Sample Road, Mumbai</td></tr>
+      <tr><td class="label">Phone:</td><td>9876543210</td></tr>
+      <tr><td class="label">GST No.:</td><td>${form.gstNumber ? esc(form.gstNumber) : '27AABCU9603R1ZP'}</td></tr>
+    </table></div>
+    <div class="info-col"><table>
+      <tr><td class="label">Bill No.:</td><td class="strong">${form.nextInvoiceNumber || 1}</td></tr>
+      <tr><td class="label">Date:</td><td>${new Date().toLocaleDateString('en-IN')}</td></tr>
+      <tr><td class="label">Total Trips:</td><td>3</td></tr>
+    </table></div>
+  </div>
+  <table class="tt"><thead><tr>
+    <th style="width:15%;">Date</th><th class="l" style="width:25%;">Pickup</th><th class="l" style="width:25%;">Drop</th><th class="r" style="width:17.5%;">Paid</th><th class="r" style="width:17.5%;">Amount</th>
+  </tr></thead><tbody>${rowsHtml}</tbody><tfoot>
+    <tr class="subtotal-row"><td colspan="3" class="r">Sub Total</td><td class="r">₹1,500.00</td><td class="r">₹23,700.00</td></tr>
+  </tfoot></table>
+  <div class="words-row">
+    <div class="words-col"><div class="words-box"><b>Amount in Words:</b> Twenty Three Thousand Seven Hundred Rupees Only</div></div>
+    ${upiQrUrl ? `<div class="upi-qr-box"><img src="${upiQrUrl}" alt="UPI QR" /></div>` : ''}
+  </div>
+  <div class="footer-row">
+    <div class="bank-col">
+      <div class="bank-title">BANK DETAILS</div>
+      <table>
+        <tr><td class="label">Bank Name:</td><td>${esc(bank?.bankName || 'State Bank of India')}</td></tr>
+        <tr><td class="label">Branch:</td><td>${esc(bank?.bankBranch || 'Main Branch')}</td></tr>
+        <tr><td class="label">Account No:</td><td class="strong">${esc(bank?.accountNumber || '1234567890')}</td></tr>
+        <tr><td class="label">IFSC Code:</td><td class="strong">${esc(bank?.ifscCode || 'SBIN0001234')}</td></tr>
+      </table>
+    </div>
+    <div class="sign-col">
+      <div class="for-company">For ${esc(companyName)}</div>
+      ${signatureUrl ? `<img src="${signatureUrl}" class="sign-img" />` : '<div style="height:38px;"></div>'}
+      <div class="sign-line">Authorized Signatory</div>
+    </div>
+  </div>
+  <div class="footer-note">${esc(form.footerNote || 'Thank you for your business!')}</div>
+</div></body></html>`;
+}
+
 const newBankAccount = (): BankAccount => ({
   id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   label: '', bankName: '', bankBranch: '', accountNumber: '', ifscCode: '',
@@ -55,6 +187,7 @@ const BrandingSettings = () => {
   const [cropTarget, setCropTarget] = useState<{ field: HeaderImageField; image: HTMLImageElement } | null>(null);
   const [upiQrProcessing, setUpiQrProcessing] = useState(false);
   const [upiQrError, setUpiQrError] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     if (branding) setForm({ ...branding, bankAccounts: branding.bankAccounts || [] });
@@ -478,12 +611,31 @@ const BrandingSettings = () => {
           </Stack>
         )}
 
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+          <Button variant="outlined" startIcon={<Receipt />} onClick={() => setShowPreview(p => !p)} sx={{ fontWeight: 700 }}>
+            {showPreview ? 'Hide Preview' : 'Bill Preview'}
+          </Button>
           <Button variant="contained" startIcon={<Save />} onClick={handleSave} disabled={saving} sx={{ color: 'primary.contrastText', fontWeight: 800 }}>
             {saving ? 'Saving...' : 'Save Branding'}
           </Button>
         </Box>
       </Paper>
+
+      {showPreview && (
+        <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.paper', border: `1px solid ${theme.palette.divider}` }}>
+          <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700, mb: 1 }}>Bill Preview</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            This is how your bill will look with demo data. Your uploaded logo, signature, bank details, and branding colors are shown as they'll appear on a real invoice.
+          </Typography>
+          <Box sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2, overflow: 'hidden', bgcolor: '#fff' }}>
+            <iframe
+              title="Bill Preview"
+              srcDoc={buildDemoBillHtml(form)}
+              style={{ width: '100%', height: 820, border: 'none', display: 'block' }}
+            />
+          </Box>
+        </Paper>
+      )}
 
       <ImageCropDialog
         open={Boolean(cropTarget)}
