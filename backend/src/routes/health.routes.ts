@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { now } from '../services/util.js';
+import { prisma } from '../db/prisma.js';
 
 export const healthRouter = Router();
 
@@ -15,6 +16,18 @@ healthRouter.get('/health', (_req, res) => {
     uptime: Math.floor(process.uptime()),        // seconds since server start
     memMb: Math.round(process.memoryUsage().rss / 1024 / 1024), // RSS in MB
   });
+});
+
+// Deep health check — verifies the DB connection is live. Use for monitoring
+// dashboards, NOT as Render's Health Check Path (use /health for that, since a
+// DB outage shouldn't trigger process restarts).
+healthRouter.get('/health/ready', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ ok: true, db: 'connected', time: now() });
+  } catch {
+    res.status(503).json({ ok: false, db: 'unreachable', time: now() });
+  }
 });
 
 // Bare GET /health at the app root (not under /api) — mounted first in app.ts, before helmet/

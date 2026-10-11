@@ -182,7 +182,8 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res, next
           fromName: branding.companyName || 'Transport Manager',
         });
       } catch (error) {
-        console.error('Failed to send password reset email:', error);
+        const { logger } = await import('../services/logger.js');
+        logger.error({ err: error }, 'failed to send password reset email');
       }
     }
     res.status(200).json(genericResponse);

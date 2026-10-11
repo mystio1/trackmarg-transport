@@ -165,7 +165,7 @@ const AuthPage = () => {
   return (
     <Box
       sx={{
-        height: { xs: 'auto', lg: '100vh' },
+        height: '100vh',
         minHeight: '100vh',
         width: '100vw',
         position: 'relative',
@@ -176,22 +176,23 @@ const AuthPage = () => {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        overflow: { xs: 'auto', lg: 'hidden' },
+        overflow: 'hidden',
         fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
       }}
     >
-      {/* Tightly Localized Soft White Glow Directly Behind Hero Text ONLY */}
+      {/* Tightly Localized Soft White Glow Directly Behind Hero Text ONLY — desktop only */}
       <Box
         sx={{
           position: 'absolute',
           top: '14%',
           left: '2%',
-          width: { xs: '90%', md: '500px', lg: '580px' },
-          height: { xs: '80%', md: '460px' },
+          width: { md: '500px', lg: '580px' },
+          height: { md: '460px' },
           background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.55) 45%, rgba(255, 255, 255, 0) 75%)',
           pointerEvents: 'none',
           zIndex: 1,
           filter: 'blur(8px)',
+          display: { xs: 'none', md: 'block' },
         }}
       />
 
@@ -201,8 +202,8 @@ const AuthPage = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          px: { xs: 3, sm: 5, md: '70px' },
-          pt: { xs: 2, lg: '18px' },
+          px: { xs: 2, sm: 5, md: '70px' },
+          pt: { xs: 1.5, lg: '18px' },
           pb: 0.5,
           width: '100%',
           zIndex: 10,
@@ -291,15 +292,16 @@ const AuthPage = () => {
         </Box>
       </Box>
 
-      {/* ── 2. MAIN CENTER HERO & LOGIN CARD SECTION (Shifted Downwards for Optimal Vertical Balance) ── */}
+      {/* ── 2. MAIN CENTER HERO & LOGIN CARD SECTION ── */}
       <Box
         sx={{
           flex: 1,
           display: 'flex',
-          alignItems: 'center',
-          px: { xs: 3, sm: 5, md: '70px' },
-          pt: { xs: 2, lg: '20px' },
-          pb: { xs: 2, lg: '15px' },
+          alignItems: { xs: 'flex-start', md: 'center' },
+          justifyContent: { xs: 'center', md: 'flex-start' },
+          px: { xs: 2, sm: 5, md: '70px' },
+          pt: { xs: 1, lg: '20px' },
+          pb: { xs: 1, lg: '15px' },
           zIndex: 10,
           width: '100%',
           boxSizing: 'border-box',
@@ -312,12 +314,12 @@ const AuthPage = () => {
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: { xs: 3, lg: 2 },
+            justifyContent: { xs: 'center', md: 'space-between' },
+            gap: { xs: 1, lg: 2 },
           }}
         >
-          {/* LEFT HERO SECTION */}
-          <Box sx={{ flex: 1, maxWidth: { md: 500, lg: 560 } }}>
+          {/* LEFT HERO SECTION — hidden on mobile so the login card is visible without scrolling */}
+          <Box sx={{ flex: 1, maxWidth: { md: 500, lg: 560 }, display: { xs: 'none', md: 'block' } }}>
             <Typography
               variant="caption"
               sx={{
@@ -877,7 +879,7 @@ const AuthPage = () => {
         </Box>
       </Box>
 
-      {/* ── 3. BOTTOM STATISTIC STRIP & HIGH-DETAIL RECOGNIZABLE DOTTED WORLD MAP FOOTER (Compact ~85px) ── */}
+      {/* ── 3. BOTTOM STATISTIC STRIP — hidden on mobile to keep login card above fold ── */}
       <Box
         sx={{
           position: 'relative',
@@ -891,9 +893,9 @@ const AuthPage = () => {
           px: { xs: 3, sm: 5, md: '60px' },
           py: { xs: 1, lg: 0.8 },
           zIndex: 10,
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'flex-start', md: 'center' },
+          display: { xs: 'none', md: 'flex' },
+          flexDirection: { md: 'row' },
+          alignItems: { md: 'center' },
           justifyContent: 'space-between',
           gap: 1.5,
           boxSizing: 'border-box',

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { isDbConnectionError, recordDbFailure } from './dbCircuitBreaker.js';
+import { logger } from '../services/logger.js';
 
 // Routes throw this for any expected 4xx — mirrors the old send(res, status, {message}) calls
 // in backend/server.mjs, just via `throw`/`next(err)` instead of an explicit early return.
@@ -30,7 +31,7 @@ export function errorHandler(): ErrorRequestHandler {
     if (isDbConnectionError(err)) {
       recordDbFailure();
       const correlationId = crypto.randomBytes(6).toString('hex');
-      console.error(`[${correlationId}] database connection error`, err);
+      logger.error({ correlationId, err }, 'database connection error');
       if (res.headersSent) { res.end(); return; }
       res.status(503).json({
         message: 'The database is temporarily unavailable — please try again in a few seconds.',
@@ -40,7 +41,7 @@ export function errorHandler(): ErrorRequestHandler {
       return;
     }
     const correlationId = crypto.randomBytes(6).toString('hex');
-    console.error(`[${correlationId}]`, err);
+    logger.error({ correlationId, err }, 'unhandled error');
     if (res.headersSent) {
       res.end();
       return;

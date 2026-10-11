@@ -2,6 +2,7 @@
 import { config } from './env.js';
 import os from 'node:os';
 import { buildApp } from './app.js';
+import { logger } from './services/logger.js';
 
 function getLanIp(): string | null {
   const nets = os.networkInterfaces();
@@ -17,6 +18,10 @@ const app = buildApp();
 
 app.listen(config.port, config.host, () => {
   const lanIp = getLanIp();
+  logger.info({
+    local: `http://localhost:${config.port}`,
+    lan: lanIp ? `http://${lanIp}:${config.port}` : undefined,
+  }, 'Transport Manager server started (v2/Express)');
   console.log('\n========================================');
   console.log('  TRANSPORT MANAGER SERVER STARTED (v2/Express)');
   console.log('========================================');

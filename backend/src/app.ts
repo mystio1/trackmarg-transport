@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
 import { securityHeaders } from './middleware/security.js';
+import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { apiRouter } from './routes/index.js';
 import { rootHealthRouter } from './routes/health.routes.js';
@@ -23,6 +24,7 @@ export function buildApp(): Express {
   app.set('trust proxy', 1);
 
   app.use(securityHeaders);
+  app.use(requestLogger());
   // Default origin '*' — intentional. The frontend can be pointed at any backend URL (LAN IP,
   // Cloudflare Tunnel domain, a custom address entered on the login screen), and auth uses a
   // manually-attached Bearer token (not cookies), so a wildcard origin doesn't hand out ambient
