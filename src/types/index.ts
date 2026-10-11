@@ -34,8 +34,91 @@ export interface AppUser {
   email?: string;
   userCode?: string;
   active: boolean;
+  // Driver's fixed base salary ("Monthly Salary" on the Driver Details > Overview/Salary tabs).
+  // Unused for admin-role rows.
+  baseSalary?: number;
+  // When salary starts accruing from — admin-editable alongside baseSalary. Undefined means
+  // "use createdAt instead" (see the Overview tab's lifetime accrual calculation).
+  joiningDate?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// Mirrors the reference payroll feature's businessEffect enum exactly — SALARY_PAYMENT and
+// BONUS_INCENTIVE are load-bearing for the salary calculation (see AppContext's salary types
+// below), the rest are classification only.
+export type BusinessEffect = 'ADVANCE_RECOVERABLE' | 'BUSINESS_EXPENSE' | 'SALARY_PAYMENT' | 'BONUS_INCENTIVE' | 'OTHER';
+
+export const BUSINESS_EFFECT_LABEL: Record<BusinessEffect, string> = {
+  ADVANCE_RECOVERABLE: 'Operator Advance / Recoverable',
+  BUSINESS_EXPENSE: 'Business Expense',
+  SALARY_PAYMENT: 'Salary Payment',
+  BONUS_INCENTIVE: 'Bonus / Incentive',
+  OTHER: 'Other',
+};
+
+// A category a driver-transaction can be filed under — a reusable, per-business catalog (see
+// Driver Details > Money tab's "+ Add Custom Category" flow).
+export interface DriverTransactionCategory {
+  id: string;
+  name: string;
+  isDefault: boolean;
+}
+
+// A money entry against a driver's salary — a fine, deduction, advance, bonus, salary payment,
+// or any admin-defined category (see Driver Details > Money tab's "Add Money Transaction"
+// dialog). `deductFromSalary` decides whether it's subtracted from Net Payable or purely a
+// record; `businessEffect` additionally routes SALARY_PAYMENT/BONUS_INCENTIVE entries into the
+// "Already Paid"/"Bonus" buckets of the Salary tab's month calculation. Hard-deleted — no
+// soft-delete/undo for this feature.
+export interface DriverTransaction {
+  id: string;
+  categoryId?: string;
+  categoryName: string;
+  amount: number;
+  note: string;
+  date: string;
+  deductFromSalary: boolean;
+  businessEffect: BusinessEffect;
+  createdAt: string;
+}
+
+// One calendar month's carry-forward salary breakdown (Driver Details > Salary tab).
+export interface DriverMonthSalary {
+  baseSalary: number;
+  bonus: number;
+  deductions: number;
+  alreadyPaid: number;
+  carriedForward: number;
+  payable: number;
+}
+
+// The day-by-day accrual math behind a driver's lifetime "Since Joining" summary — every
+// intermediate figure, not just the total, so the Overview tab's "How This Was Calculated"
+// dialog can show exactly how the number was reached.
+export interface DriverAccrualBreakdown {
+  fullCycles: number;
+  fullCyclesAmount: number;
+  cycleStart: string;
+  cycleEnd: string;
+  cycleDays: number;
+  elapsedDays: number;
+  dailyRate: number;
+  partialAmount: number;
+  total: number;
+}
+
+// Lifetime totals from the driver's joining date through today (Driver Details > Overview tab).
+export interface DriverLifetimeSalary {
+  joiningDate: string;
+  asOf: string;
+  baseSalary: number;
+  accrual: DriverAccrualBreakdown;
+  bonus: number;
+  deductions: number;
+  totalPayable: number;
+  totalPaid: number;
+  remaining: number;
 }
 
 export interface AppGroup {
@@ -143,7 +226,7 @@ export interface Branding {
   accentColor: string;
   logoDataUrl: string;
   signatureDataUrl: string;
-  // Flank the company name on printed bills — left/right of "SHIVAM TRANSPORT" in the header.
+  // Flank the company name on printed bills — left/right of "TRANSPORT MANAGER" in the header.
   // Both slots share the same fixed aspect ratio (see src/utils/headerImage.ts) so the header
   // never looks lopsided whether one, both, or neither is set.
   headerLeftImageDataUrl: string;
@@ -178,11 +261,27 @@ export interface VehicleDocument {
   updatedAt?: string;
 }
 
+// One maintenance/service entry on a vehicle (tyre change, oil change, repair, ...). `odometer`
+// is the km reading when the work was done.
+export interface VehicleMaintenance {
+  id: string;
+  type: string;
+  date: string;
+  odometer?: number;
+  cost: number;
+  notes?: string;
+  createdAt?: string;
+}
+
 export interface Vehicle {
   id: string;
   groupCode?: string;
   vehicleNumber: string;
+  // The driver the admin has put on this truck — an admin-side record only.
+  assignedDriverId?: string;
+  assignedDriverName?: string;
   documents: VehicleDocument[];
+  maintenance: VehicleMaintenance[];
   createdAt?: string;
   updatedAt?: string;
 }

@@ -1,11 +1,11 @@
 # ============================================================
-#  SHIVAM TRANSPORT — START SERVER + PUBLIC TUNNEL
+#  TRANSPORT MANAGER — START SERVER + PUBLIC TUNNEL
 #  Run this script: Right-click → "Run with PowerShell"
 # ============================================================
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Yellow
-Write-Host "   SHIVAM TRANSPORT STARTUP" -ForegroundColor Yellow
+Write-Host "   TRANSPORT MANAGER STARTUP" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Yellow
 
 # Kill any existing server on port 4000

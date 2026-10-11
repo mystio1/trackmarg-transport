@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Shivam Transport</string>
-    <string name="title_activity_main">Shivam Transport</string>
+    <string name="app_name">Transport Manager</string>
+    <string name="title_activity_main">Transport Manager</string>
     <string name="package_name">com.shivam.transport</string>
     <string name="custom_url_scheme">com.shivam.transport</string>
 </resources>

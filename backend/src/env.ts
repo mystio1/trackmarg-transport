@@ -36,8 +36,12 @@ export const config = {
   // nobody explicitly configured.
   supportPassword: process.env.SUPPORT_ACCESS_PASSWORD || '',
   databaseUrl: process.env.DATABASE_URL,
-  gmailUser: process.env.GMAIL_USER,
-  gmailAppPassword: process.env.GMAIL_APP_PASSWORD,
+  // SendGrid's HTTPS API rather than raw SMTP — Render's free tier blocks outbound SMTP
+  // (ports 465/587) entirely, so nodemailer/Gmail SMTP hangs indefinitely there. HTTPS (443)
+  // isn't blocked on any tier. senderEmail must be verified as a Single Sender in SendGrid
+  // (or belong to a domain verified there) or SendGrid will reject the send.
+  sendgridApiKey: process.env.SENDGRID_API_KEY,
+  senderEmail: process.env.SENDER_EMAIL,
   backendRoot,
   dataDir,
   distDir: path.resolve(backendRoot, '..', 'dist'),

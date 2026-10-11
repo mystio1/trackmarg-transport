@@ -34,7 +34,7 @@ interface DriverOption {
 const SELF_DRIVER_OPTION: DriverOption = { id: 'self', label: 'Self (Admin)' };
 
 const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
-  const { addTrip, customers, drivers } = useAppContext();
+  const { addTrip, customers, drivers, vehicles } = useAppContext();
   const theme = useTheme();
   const toast = useToast();
   const customer = customers.find(c => c.id === customerId);
@@ -269,14 +269,14 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
           </Grid>
 
           <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Vehicle Number"
-              name="vehicleNumber"
-              placeholder="e.g. MH12AB1234"
-              value={tripData.vehicleNumber || ''}
-              onChange={e => setTripData(prev => ({ ...prev, vehicleNumber: e.target.value.toUpperCase() }))}
-              variant="outlined"
+            <Autocomplete
+              freeSolo
+              options={vehicles.map(v => v.vehicleNumber)}
+              inputValue={tripData.vehicleNumber || ''}
+              onInputChange={(_e, value) => setTripData(prev => ({ ...prev, vehicleNumber: value.toUpperCase() }))}
+              renderInput={params => (
+                <TextField {...params} fullWidth label="Vehicle Number" name="vehicleNumber" placeholder="e.g. MH12AB1234" variant="outlined" />
+              )}
             />
           </Grid>
 

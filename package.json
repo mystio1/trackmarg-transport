@@ -2,8 +2,8 @@
   "name": "shivam_transport",
   "private": true,
   "version": "1.0.0",
-  "description": "Customer and trip management application for Shivam Transport",
-  "author": "Shivam Transport",
+  "description": "Customer and trip management application for Transport Manager",
+  "author": "Transport Manager",
   "type": "module",
   "scripts": {
     "dev": "vite",

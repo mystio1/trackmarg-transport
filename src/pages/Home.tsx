@@ -67,7 +67,7 @@ const Home = () => {
               color: theme.palette.primary.main,
             }}
           >
-            Shivam Transport Dashboard
+            Transport Manager Dashboard
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Track customers, trips and revenue in one clean view.

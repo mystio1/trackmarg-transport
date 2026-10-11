@@ -43,16 +43,18 @@ model Group {
   maxBillsPerDay    Int?
   createdAt         DateTime      @default(now())
 
-  branding          Branding?
-  bankAccounts      BankAccount[]
-  users             User[]
-  customers         Customer[]
-  trips             Trip[]
-  bills             Bill[]
-  advanceEntries    AdvanceEntry[]
-  auditLogs         AuditLog[]
-  vehicles          Vehicle[]
-  tripEditRequests  TripEditRequest[]
+  branding                    Branding?
+  bankAccounts                BankAccount[]
+  users                       User[]
+  customers                   Customer[]
+  trips                       Trip[]
+  bills                       Bill[]
+  advanceEntries              AdvanceEntry[]
+  auditLogs                   AuditLog[]
+  vehicles                    Vehicle[]
+  tripEditRequests            TripEditRequest[]
+  driverTransactions          DriverTransaction[]
+  driverTransactionCategories DriverTransactionCategory[]
 }
 
 model Branding {
@@ -60,7 +62,7 @@ model Branding {
   groupId           String  @unique
   group             Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  companyName       String  @default("Shivam Transport")
+  companyName       String  @default("Transport Manager")
   tagline           String  @default("Transport & Logistics Solutions")
   proprietorName    String  @default("")
   phone1            String  @default("")
@@ -114,6 +116,13 @@ model User {
   resetOtpHash       String?
   resetOtpExpiresAt  DateTime?
   resetOtpAttempts   Int       @default(0)
+  // A driver's fixed base salary, admin-editable from the Driver Details > Salary tab. Unused
+  // for admin-role rows.
+  baseSalary         Decimal   @default(0) @db.Decimal(12, 2)
+  // When salary starts accruing from — admin-editable alongside baseSalary. Null means "use
+  // createdAt instead" everywhere this is read (see backend/src/services/salary.ts), same
+  // fallback the reference app uses for its Operator.joiningDate.
+  joiningDate        DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -122,6 +131,8 @@ model User {
   auditLogs          AuditLog[]
   sessions           Session[]
   tripEditRequests   TripEditRequest[]
+  driverTransactions DriverTransaction[]
+  assignedVehicles   Vehicle[]
 
   @@unique([groupId, phone])
   @@index([groupId])
@@ -188,6 +199,52 @@ model AdvanceEntry {
 
   @@index([groupId])
   @@index([customerId, deleted, date])
+}
+
+// Every owner<->driver money movement — this row *is* the financial record (no separate
+// expense row to keep in sync / accidentally double-count). Salary is never stored: it's
+// computed live per calendar month from these rows, see backend/src/services/salary.ts:
+//   baseSalary + sum(businessEffect=BONUS_INCENTIVE) - sum(deductFromSalary=true, excluding the
+//   above two) - sum(businessEffect=SALARY_PAYMENT) + carried-forward balance from every earlier
+//   month. Hard-deleted (no soft-delete) — deleting one immediately changes the live salary
+//   calculation, matching the reference payroll feature this was ported from.
+model DriverTransaction {
+  id               String              @id @default(cuid())
+  driverId         String
+  driver           User                @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  groupId          String
+  group            Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  categoryId       String?
+  category         DriverTransactionCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  amount           Decimal             @db.Decimal(12, 2)
+  note             String              @default("")
+  date             DateTime
+  deductFromSalary Boolean             @default(true)
+  // "ADVANCE_RECOVERABLE" | "BUSINESS_EXPENSE" | "SALARY_PAYMENT" | "BONUS_INCENTIVE" | "OTHER"
+  // — SALARY_PAYMENT and BONUS_INCENTIVE are load-bearing for the salary calculation (see
+  // comment above); the rest are classification only. Plain String (not a Prisma enum) so a
+  // new effect can be added without a migration, matching the reference schema's own choice.
+  businessEffect   String              @default("ADVANCE_RECOVERABLE")
+  createdAt        DateTime            @default(now())
+
+  @@index([groupId])
+  @@index([driverId, date])
+}
+
+// Reusable, per-business category catalog. isDefault rows are seeded once per group (the same
+// starter list every business gets); an admin's own "+ Add Custom Category" entries get
+// isDefault=false and are reused by name on every later transaction that picks the same one.
+model DriverTransactionCategory {
+  id           String              @id @default(cuid())
+  groupId      String
+  group        Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name         String
+  isDefault    Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  transactions DriverTransaction[]
+
+  @@unique([groupId, name])
+  @@index([groupId])
 }
 
 model Trip {
@@ -320,13 +377,37 @@ model Vehicle {
   groupId       String
   group         Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
   vehicleNumber String
+  // The driver the admin has put on this truck (Vehicles > vehicle > Assigned Driver). Purely an
+  // admin-side record — a driver can still submit a trip for any vehicle number. SetNull so
+  // removing a driver just leaves the truck unassigned.
+  assignedDriverId String?
+  assignedDriver   User?          @relation(fields: [assignedDriverId], references: [id], onDelete: SetNull)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
   documents     VehicleDocument[]
+  maintenance   VehicleMaintenance[]
 
   @@index([groupId])
+  @@index([assignedDriverId])
   @@unique([groupId, vehicleNumber])
+}
+
+// One maintenance/service entry on a vehicle (tyre change, oil change, repair, ...). `type` is
+// free text like VehicleDocument.label; `odometer` is the km reading when the work was done, and
+// the vehicle's "current odometer" shown in the UI is simply the highest reading logged here.
+model VehicleMaintenance {
+  id        String   @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  type      String
+  date      DateTime
+  odometer  Int?
+  cost      Decimal  @default(0) @db.Decimal(12, 2)
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([vehicleId])
 }
 
 // One expiry-tracked segment on a vehicle — Insurance and PUC are just the two suggested first;

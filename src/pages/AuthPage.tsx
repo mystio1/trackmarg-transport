@@ -25,7 +25,7 @@ const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [groupCode, setGroupCode] = useState('');
-  const [groupName, setGroupName] = useState('Shivam Transport');
+  const [groupName, setGroupName] = useState('');
   const [serverAddress, setServerAddress] = useState(serverUrl);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,10 @@ const AuthPage = () => {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  // Hidden by default to keep the signup form compact — most admins never need it (the default
+  // production server is right); drivers/admins joining over a LAN IP or Cloudflare Tunnel are
+  // the case it exists for, so it stays reachable via this toggle instead of being removed.
+  const [showServerAddress, setShowServerAddress] = useState(false);
   // Login no longer asks for a group code up front. Set only in the rare case where the same
   // phone + password are valid for more than one business — the user then taps one of these
   // instead of typing a code.
@@ -294,7 +298,7 @@ const AuthPage = () => {
           display: 'flex',
           alignItems: 'center',
           px: { xs: 3, sm: 5, md: '70px' },
-          pt: { xs: 2, lg: '50px' },
+          pt: { xs: 2, lg: '20px' },
           pb: { xs: 2, lg: '15px' },
           zIndex: 10,
           width: '100%',
@@ -424,7 +428,10 @@ const AuthPage = () => {
             <Paper
               elevation={0}
               sx={{
-                p: { xs: 2.5, sm: 3.2 },
+                // Signup shows several more fields than login — tighter padding here (plus the
+                // smaller field heights and spacing below) keeps the whole card on-screen
+                // without needing to scroll.
+                p: isSignup ? { xs: 2, sm: 2.4 } : { xs: 2.5, sm: 3.2 },
                 borderRadius: '22px',
                 bgcolor: 'rgba(255, 255, 255, 0.72)',
                 backdropFilter: 'blur(22px) saturate(180%)',
@@ -490,14 +497,16 @@ const AuthPage = () => {
                 </Stack>
               ) : (
               <form onSubmit={handleSubmit}>
-                <Stack spacing={1.8}>
+                <Stack spacing={isSignup ? 1.3 : 1.8}>
                   <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', fontSize: '1.65rem', letterSpacing: '-0.4px', fontFamily: 'inherit' }}>
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', fontSize: isSignup ? '1.35rem' : '1.65rem', letterSpacing: '-0.4px', fontFamily: 'inherit' }}>
                       {isSignup ? 'Create Account' : 'Welcome Back'}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#475569', mt: 0.3, fontWeight: 500, fontSize: '0.82rem', fontFamily: 'inherit' }}>
-                      {isSignup ? 'Sign up to manage your transport fleet' : 'Log in to your Transport Management account'}
-                    </Typography>
+                    {!isSignup && (
+                      <Typography variant="body2" sx={{ color: '#475569', mt: 0.3, fontWeight: 500, fontSize: '0.82rem', fontFamily: 'inherit' }}>
+                        Log in to your Transport Management account
+                      </Typography>
+                    )}
                   </Box>
 
                   {error && (
@@ -516,8 +525,8 @@ const AuthPage = () => {
                         sx: {
                           borderRadius: '10px',
                           bgcolor: 'rgba(255, 255, 255, 0.88)',
-                          height: 46,
-                          fontSize: '0.9rem',
+                          height: 40,
+                          fontSize: '0.85rem',
                           color: '#0F172A',
                           border: '1.5px solid rgba(148, 163, 184, 0.6)',
                           '& fieldset': { border: 'none' },
@@ -538,7 +547,7 @@ const AuthPage = () => {
                         label="Account Type"
                         value={role}
                         onChange={e => setRole(e.target.value as UserRole)}
-                        sx={{ borderRadius: '10px', bgcolor: 'rgba(255, 255, 255, 0.88)', height: 46, color: '#0F172A', fontWeight: 600 }}
+                        sx={{ borderRadius: '10px', bgcolor: 'rgba(255, 255, 255, 0.88)', height: 40, color: '#0F172A', fontWeight: 600 }}
                       >
                         <MenuItem value="admin">Admin / Owner</MenuItem>
                         <MenuItem value="driver">Driver / Employee</MenuItem>
@@ -552,12 +561,13 @@ const AuthPage = () => {
                       value={groupName}
                       onChange={e => setGroupName(e.target.value)}
                       fullWidth
+                      required
                       InputProps={{
                         sx: {
                           borderRadius: '10px',
                           bgcolor: 'rgba(255, 255, 255, 0.88)',
-                          height: 46,
-                          fontSize: '0.9rem',
+                          height: 40,
+                          fontSize: '0.85rem',
                           color: '#0F172A',
                           border: '1.5px solid rgba(148, 163, 184, 0.6)',
                           '& fieldset': { border: 'none' },
@@ -582,8 +592,8 @@ const AuthPage = () => {
                         sx: {
                           borderRadius: '10px',
                           bgcolor: 'rgba(255, 255, 255, 0.88)',
-                          height: 46,
-                          fontSize: '0.9rem',
+                          height: 40,
+                          fontSize: '0.85rem',
                           color: '#0F172A',
                           border: '1.5px solid rgba(148, 163, 184, 0.6)',
                           '& fieldset': { border: 'none' },
@@ -613,8 +623,8 @@ const AuthPage = () => {
                       sx: {
                         borderRadius: '10px',
                         bgcolor: 'rgba(255, 255, 255, 0.88)',
-                        height: 46,
-                        fontSize: '0.9rem',
+                        height: isSignup ? 40 : 46,
+                        fontSize: isSignup ? '0.85rem' : '0.9rem',
                         color: '#0F172A',
                         border: '1.5px solid rgba(148, 163, 184, 0.65)',
                         '& fieldset': { border: 'none' },
@@ -655,8 +665,8 @@ const AuthPage = () => {
                       sx: {
                         borderRadius: '10px',
                         bgcolor: 'rgba(255, 255, 255, 0.88)',
-                        height: 46,
-                        fontSize: '0.9rem',
+                        height: isSignup ? 40 : 46,
+                        fontSize: isSignup ? '0.85rem' : '0.9rem',
                         color: '#0F172A',
                         border: '1.5px solid rgba(148, 163, 184, 0.65)',
                         '& fieldset': { border: 'none' },
@@ -684,8 +694,8 @@ const AuthPage = () => {
                         sx: {
                           borderRadius: '10px',
                           bgcolor: 'rgba(255, 255, 255, 0.88)',
-                          height: 46,
-                          fontSize: '0.9rem',
+                          height: 40,
+                          fontSize: '0.85rem',
                           color: '#0F172A',
                           border: '1.5px solid rgba(148, 163, 184, 0.6)',
                           '& fieldset': { border: 'none' },
@@ -699,19 +709,32 @@ const AuthPage = () => {
                     />
                   )}
 
-                  {isSignup && (
+                  {isSignup && !showServerAddress && (
+                    <Link
+                      component="button"
+                      type="button"
+                      onClick={() => setShowServerAddress(true)}
+                      underline="hover"
+                      sx={{ color: '#64748B', fontWeight: 600, fontSize: '0.76rem', fontFamily: 'inherit', textAlign: 'left' }}
+                    >
+                      Joining over a LAN/tunnel link? Set a custom server address
+                    </Link>
+                  )}
+
+                  {isSignup && showServerAddress && (
                     <TextField
                       placeholder="Server Address e.g. https://api.yourdomain.com"
                       value={serverAddress}
                       onChange={e => setServerAddress(e.target.value)}
                       fullWidth
                       size="small"
+                      autoFocus
                       InputProps={{
                         sx: {
                           borderRadius: '10px',
                           bgcolor: 'rgba(255, 255, 255, 0.88)',
-                          height: 44,
-                          fontSize: '0.82rem',
+                          height: 36,
+                          fontSize: '0.8rem',
                           color: '#0F172A',
                           border: '1.5px solid rgba(148, 163, 184, 0.6)',
                           '& fieldset': { border: 'none' },
@@ -761,8 +784,8 @@ const AuthPage = () => {
                       bgcolor: '#F5A623',
                       color: '#0F172A',
                       fontWeight: 800,
-                      fontSize: '0.98rem',
-                      height: 46,
+                      fontSize: isSignup ? '0.9rem' : '0.98rem',
+                      height: isSignup ? 40 : 46,
                       borderRadius: '10px',
                       textTransform: 'none',
                       boxShadow: 'none',
@@ -781,47 +804,52 @@ const AuthPage = () => {
                     <ArrowForward sx={{ fontSize: 18 }} />
                   </Button>
 
-                  {/* OR Divider */}
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(203, 213, 225, 0.7)' }} />
-                    <Typography variant="caption" sx={{ px: 1.5, color: '#64748B', fontWeight: 600, fontSize: '0.7rem', fontFamily: 'inherit' }}>
-                      OR
-                    </Typography>
-                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(203, 213, 225, 0.7)' }} />
-                  </Box>
+                  {/* OR / Continue with Google — decorative only (onClick just resubmits this
+                      form; there's no real Google OAuth flow), so it's skipped in signup mode
+                      to keep that form short enough to fit on-screen without scrolling. */}
+                  {!isSignup && (
+                    <>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(203, 213, 225, 0.7)' }} />
+                        <Typography variant="caption" sx={{ px: 1.5, color: '#64748B', fontWeight: 600, fontSize: '0.7rem', fontFamily: 'inherit' }}>
+                          OR
+                        </Typography>
+                        <Box sx={{ flex: 1, height: '1px', bgcolor: 'rgba(203, 213, 225, 0.7)' }} />
+                      </Box>
 
-                  {/* Google Button */}
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={handleSubmit}
-                    sx={{
-                      bgcolor: 'rgba(255, 255, 255, 0.88)',
-                      color: '#0F172A',
-                      fontWeight: 700,
-                      fontSize: '0.88rem',
-                      height: 46,
-                      borderRadius: '10px',
-                      textTransform: 'none',
-                      borderColor: 'rgba(203, 213, 225, 0.8)',
-                      fontFamily: 'inherit',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-                      '&:hover': {
-                        bgcolor: 'rgba(255, 255, 255, 0.98)',
-                        borderColor: 'rgba(203, 213, 225, 1)',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                      <svg width="17" height="17" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.617z" fill="#4285F4"/>
-                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
-                        <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-                      </svg>
-                      <span>Continue with Google</span>
-                    </Box>
-                  </Button>
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        onClick={handleSubmit}
+                        sx={{
+                          bgcolor: 'rgba(255, 255, 255, 0.88)',
+                          color: '#0F172A',
+                          fontWeight: 700,
+                          fontSize: '0.88rem',
+                          height: 46,
+                          borderRadius: '10px',
+                          textTransform: 'none',
+                          borderColor: 'rgba(203, 213, 225, 0.8)',
+                          fontFamily: 'inherit',
+                          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                          '&:hover': {
+                            bgcolor: 'rgba(255, 255, 255, 0.98)',
+                            borderColor: 'rgba(203, 213, 225, 1)',
+                          },
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                          <svg width="17" height="17" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.617z" fill="#4285F4"/>
+                            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                            <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                          </svg>
+                          <span>Continue with Google</span>
+                        </Box>
+                      </Button>
+                    </>
+                  )}
 
                   {/* Create Account Link Footer */}
                   <Box sx={{ textAlign: 'center', pt: 0.2 }}>

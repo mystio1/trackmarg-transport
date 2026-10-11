@@ -32,7 +32,7 @@ const DataBackupRestore: React.FC<DataBackupRestoreProps> = ({ open, onClose, mo
         backupDate: new Date().toISOString(),
         appVersion: '1.0.0',
       };
-      const fileName = `shivam_transport_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      const fileName = `transport_manager_backup_${new Date().toISOString().slice(0, 10)}.json`;
       const saved = await saveToFile(JSON.stringify(backupData, null, 2), fileName);
       setResult(saved
         ? { success: true, message: `Backup downloaded as: ${saved}` }

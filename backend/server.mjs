@@ -369,7 +369,7 @@ function isValidEmail(value) {
 
 // ── Bill branding (per-group, admin-editable) ───────────────────────────────
 const DEFAULT_BRANDING = {
-  companyName: 'Shivam Transport',
+  companyName: 'Transport Manager',
   tagline: 'Transport & Logistics Solutions',
   proprietorName: '',
   phone1: '',
@@ -552,6 +552,7 @@ async function handleApi(req, res) {
     const password = String(body.password || '');
     const email    = String(body.email || '').trim().toLowerCase();
     const requestedGroupCode = normalizeGroupCode(body.groupCode);
+    const groupName = String(body.groupName || '').trim();
 
     if (!name || !phone)
       return send(res, 400, { message: 'Name and phone are required' });
@@ -569,11 +570,12 @@ async function handleApi(req, res) {
     }
 
     if (role === 'admin' && !group) {
+      if (!groupName) return send(res, 400, { message: 'A business name is required' });
       groupCode = groupCode || generateGroupCode();
       while (db.groups.some(g => g.code === groupCode)) groupCode = generateGroupCode();
       group = {
         code: groupCode,
-        name: String(body.groupName || 'Shivam Transport').trim(),
+        name: groupName,
         frozen: false,
         createdAt: now(),
       };
@@ -698,7 +700,7 @@ async function handleApi(req, res) {
       await writeDb(db);
       try {
         const group = db.groups.find(g => g.code === groupCode);
-        const fromName = getBranding(group).companyName || 'Shivam Transport';
+        const fromName = getBranding(group).companyName || 'Transport Manager';
         await transporter.sendMail({
           from: `"${fromName}" <${process.env.GMAIL_USER}>`,
           to: user.email,
@@ -1171,7 +1173,7 @@ async function handleApi(req, res) {
     }
     const body = await readBody(req);
     const to = String(body.to || '').trim();
-    const subject = String(body.subject || '').trim() || 'Shivam Transport';
+    const subject = String(body.subject || '').trim() || 'Transport Manager';
     const text = String(body.text || '');
     if (!isValidEmail(to)) return send(res, 400, { message: 'A valid recipient email is required' });
     const transporter = getMailTransporter();
@@ -1182,7 +1184,7 @@ async function handleApi(req, res) {
     }
     try {
       const group = auth.db.groups.find(g => g.code === auth.user.groupCode);
-      const fromName = getBranding(group).companyName || 'Shivam Transport';
+      const fromName = getBranding(group).companyName || 'Transport Manager';
       await transporter.sendMail({
         from: `"${fromName}" <${process.env.GMAIL_USER}>`,
         to, subject, text,
@@ -2001,7 +2003,7 @@ async function runBackup() {
     server.listen(port, host, () => {
       const lanIp = getLanIp();
       console.log('\n========================================');
-      console.log('  SHIVAM TRANSPORT SERVER STARTED');
+      console.log('  TRANSPORT MANAGER SERVER STARTED');
       console.log('========================================');
       console.log(`  Admin (this laptop): http://localhost:${port}`);
       if (lanIp) {

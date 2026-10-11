@@ -22,6 +22,8 @@ import AllTrips from './pages/AllTrips';
 import AddTrip from './pages/AddTrip';
 import MyBills from './pages/MyBills';
 import DocumentReminders from './pages/DocumentReminders';
+import VehicleList from './pages/VehicleList';
+import VehicleDetails from './pages/VehicleDetails';
 import SupportConsole from './pages/SupportConsole';
 import { useMemo } from 'react';
 import type {} from '@mui/x-date-pickers/AdapterDayjs';
@@ -277,7 +279,7 @@ const ClientApp = () => {
         }}
       >
         <CircularProgress sx={{ color: '#F0B90B' }} />
-        <Box sx={{ color: 'text.secondary', fontWeight: 600 }}>Loading Shivam Transport...</Box>
+        <Box sx={{ color: 'text.secondary', fontWeight: 600 }}>Loading Transport Manager...</Box>
       </Box>
     );
   }
@@ -298,6 +300,8 @@ const ClientApp = () => {
                 <Route path="/customer/:id" element={<CustomerDetails />} />
                 <Route path="/drivers" element={<DriverList />} />
                 <Route path="/driver/:id" element={<DriverDetails />} />
+                <Route path="/vehicles" element={<VehicleList />} />
+                <Route path="/vehicle/:id" element={<VehicleDetails />} />
                 <Route path="/trips" element={<AllTrips />} />
                 <Route path="/add-trip" element={<AddTrip />} />
                 <Route path="/my-bills" element={<MyBills />} />

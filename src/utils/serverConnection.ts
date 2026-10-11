@@ -5,11 +5,16 @@
 export const TOKEN_KEY = 'shivam_session_token';
 export const SERVER_URL_KEY = 'shivam_server_url';
 
-const BUILT_IN_DEFAULT_BASE =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== 'undefined' && window.location.port !== '5173'
-    ? ''
-    : 'http://localhost:4000');
+// import.meta.env.VITE_API_URL is a BUILD-TIME replacement — it gets baked into every build the
+// same way, including `npm run dev`, so a plain `VITE_API_URL || ...` fallback made local dev
+// against the Vite server always default to production no matter which port served the page
+// (the port-number check below it never even ran). import.meta.env.DEV is true only for `vite`/
+// `npm run dev` and false for every actual build (`vite build` — used for the production web
+// bundle, `npm run start`'s local server, and the Capacitor mobile app), so gating on it instead
+// keeps local dev pointed at the local backend while leaving those other targets unaffected.
+const BUILT_IN_DEFAULT_BASE = import.meta.env.DEV
+  ? 'http://localhost:4000'
+  : (import.meta.env.VITE_API_URL || '');
 
 // The server address a driver/admin's phone talks to is resolved at RUNTIME (not baked into
 // the build) so the same installed app can be pointed at whichever server the admin runs —

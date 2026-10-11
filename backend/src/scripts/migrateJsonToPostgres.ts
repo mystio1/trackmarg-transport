@@ -130,7 +130,7 @@ export function buildMigrationPlan(db: LegacyDb): MigrationPlan {
     return {
       id: newId,
       code: g.code,
-      name: g.name || 'Shivam Transport',
+      name: g.name || 'Transport Manager',
       createdAt: toDate(g.createdAt),
       nextInvoiceNumber: Number.isFinite(Number(nextInvoiceNumber)) && Number(nextInvoiceNumber) > 0
         ? Number(nextInvoiceNumber) : 1,

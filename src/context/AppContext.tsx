@@ -6,6 +6,11 @@ import type {
   Branding,
   Customer,
   CustomerWithBalance,
+  BusinessEffect,
+  DriverTransaction,
+  DriverTransactionCategory,
+  DriverMonthSalary,
+  DriverLifetimeSalary,
   SavedBill,
   SupportBusinessSummary,
   Trip,
@@ -177,6 +182,34 @@ interface AppContextType {
   resetPassword: (phone: string, groupCode: string, otp: string, newPassword: string) => Promise<void>;
   updateMyEmail: (email: string) => Promise<void>;
   resetDriverPassword: (driverId: string, newPassword: string) => Promise<void>;
+  updateDriverSalary: (driverId: string, baseSalary: number, joiningDate?: string | null) => Promise<void>;
+  fetchDriverFinance: (
+    driverId: string,
+    month?: { year: number; month: number },
+  ) => Promise<{
+    transactions: DriverTransaction[];
+    categories: DriverTransactionCategory[];
+    salary: DriverMonthSalary;
+    lifetimeSalary: DriverLifetimeSalary;
+  }>;
+  addDriverTransaction: (
+    driverId: string,
+    input: {
+      categoryId?: string; newCategoryName?: string;
+      amount: number; note?: string; date?: string;
+      deductFromSalary: boolean; businessEffect: BusinessEffect;
+    },
+  ) => Promise<DriverTransaction[]>;
+  updateDriverTransaction: (
+    driverId: string,
+    transactionId: string,
+    input: {
+      categoryId?: string; newCategoryName?: string;
+      amount: number; note?: string; date?: string;
+      deductFromSalary: boolean; businessEffect: BusinessEffect;
+    },
+  ) => Promise<DriverTransaction[]>;
+  deleteDriverTransaction: (driverId: string, transactionId: string) => Promise<DriverTransaction[]>;
   refreshData: () => Promise<void>;
   updateBranding: (updates: Partial<Branding>) => Promise<void>;
   getNextInvoiceNumber: () => Promise<number>;
@@ -192,8 +225,19 @@ interface AppContextType {
   permanentlyDeleteBill: (billId: string) => Promise<void>;
   restoreBackup: (customers: unknown[], trips: unknown[]) => Promise<{ customersImported: number; tripsImported: number }>;
   vehicles: Vehicle[];
-  addVehicle: (vehicleNumber: string) => Promise<Vehicle>;
-  updateVehicle: (vehicleId: string, vehicleNumber: string) => Promise<void>;
+  addVehicle: (
+    vehicleNumber: string,
+    extras?: { assignedDriverId?: string; documents?: { label: string; expiryDate: string }[] },
+  ) => Promise<Vehicle>;
+  updateVehicle: (
+    vehicleId: string,
+    updates: { vehicleNumber?: string; assignedDriverId?: string | null },
+  ) => Promise<void>;
+  addVehicleMaintenance: (
+    vehicleId: string,
+    input: { type: string; date: string; odometer?: number; cost?: number; notes?: string },
+  ) => Promise<void>;
+  deleteVehicleMaintenance: (vehicleId: string, maintenanceId: string) => Promise<void>;
   deleteVehicle: (vehicleId: string) => Promise<void>;
   addVehicleDocument: (
     vehicleId: string,
@@ -601,6 +645,65 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     });
   };
 
+  const updateDriverSalary = async (driverId: string, baseSalary: number, joiningDate?: string | null): Promise<void> => {
+    await apiRequest<{ driver: AppUser }>(`/api/drivers/${driverId}/salary`, {
+      method: 'PATCH',
+      body: { baseSalary, joiningDate },
+    });
+    await refreshData();
+  };
+
+  const fetchDriverFinance = async (
+    driverId: string,
+    month?: { year: number; month: number },
+  ): Promise<{
+    transactions: DriverTransaction[];
+    categories: DriverTransactionCategory[];
+    salary: DriverMonthSalary;
+    lifetimeSalary: DriverLifetimeSalary;
+  }> => {
+    const query = month ? `?month=${month.year}-${month.month}` : '';
+    return apiRequest(`/api/drivers/${driverId}/finance${query}`);
+  };
+
+  const addDriverTransaction = async (
+    driverId: string,
+    input: {
+      categoryId?: string; newCategoryName?: string;
+      amount: number; note?: string; date?: string;
+      deductFromSalary: boolean; businessEffect: BusinessEffect;
+    },
+  ): Promise<DriverTransaction[]> => {
+    const result = await apiRequest<{ transactions: DriverTransaction[] }>(`/api/drivers/${driverId}/transactions`, {
+      method: 'POST',
+      body: input,
+    });
+    return result.transactions;
+  };
+
+  const updateDriverTransaction = async (
+    driverId: string,
+    transactionId: string,
+    input: {
+      categoryId?: string; newCategoryName?: string;
+      amount: number; note?: string; date?: string;
+      deductFromSalary: boolean; businessEffect: BusinessEffect;
+    },
+  ): Promise<DriverTransaction[]> => {
+    const result = await apiRequest<{ transactions: DriverTransaction[] }>(`/api/drivers/${driverId}/transactions/${transactionId}`, {
+      method: 'PATCH',
+      body: input,
+    });
+    return result.transactions;
+  };
+
+  const deleteDriverTransaction = async (driverId: string, transactionId: string): Promise<DriverTransaction[]> => {
+    const result = await apiRequest<{ transactions: DriverTransaction[] }>(`/api/drivers/${driverId}/transactions/${transactionId}`, {
+      method: 'DELETE',
+    });
+    return result.transactions;
+  };
+
   // ── Customer actions ───────────────────────────────────────────────────
   const addCustomer = async (customerData: Omit<Customer, 'id'> | string): Promise<string> => {
     const body =
@@ -866,19 +969,43 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   };
 
   // ── Vehicles & document-expiry reminders ────────────────────────────────
-  const addVehicle = async (vehicleNumber: string): Promise<Vehicle> => {
+  const addVehicle = async (
+    vehicleNumber: string,
+    extras: { assignedDriverId?: string; documents?: { label: string; expiryDate: string }[] } = {},
+  ): Promise<Vehicle> => {
     const response = await apiRequest<{ vehicle: Vehicle }>('/api/vehicles', {
       method: 'POST',
-      body: { vehicleNumber },
+      body: { vehicleNumber, ...extras },
     });
     setVehicles(prev => [...prev, response.vehicle].sort((a, b) => a.vehicleNumber.localeCompare(b.vehicleNumber)));
     return response.vehicle;
   };
 
-  const updateVehicle = async (vehicleId: string, vehicleNumber: string) => {
+  const updateVehicle = async (
+    vehicleId: string,
+    updates: { vehicleNumber?: string; assignedDriverId?: string | null },
+  ) => {
     const response = await apiRequest<{ vehicle: Vehicle }>(`/api/vehicles/${vehicleId}`, {
       method: 'PATCH',
-      body: { vehicleNumber },
+      body: updates,
+    });
+    setVehicles(prev => prev.map(v => (v.id === vehicleId ? response.vehicle : v)));
+  };
+
+  const addVehicleMaintenance = async (
+    vehicleId: string,
+    input: { type: string; date: string; odometer?: number; cost?: number; notes?: string },
+  ) => {
+    const response = await apiRequest<{ vehicle: Vehicle }>(`/api/vehicles/${vehicleId}/maintenance`, {
+      method: 'POST',
+      body: input,
+    });
+    setVehicles(prev => prev.map(v => (v.id === vehicleId ? response.vehicle : v)));
+  };
+
+  const deleteVehicleMaintenance = async (vehicleId: string, maintenanceId: string) => {
+    const response = await apiRequest<{ vehicle: Vehicle }>(`/api/vehicles/${vehicleId}/maintenance/${maintenanceId}`, {
+      method: 'DELETE',
     });
     setVehicles(prev => prev.map(v => (v.id === vehicleId ? response.vehicle : v)));
   };
@@ -998,6 +1125,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         updateBranding, getNextInvoiceNumber, sendBillEmail,
         bills, saveBill, checkBillGenerationLimit, deleteBill, permanentlyDeleteBill, restoreBackup,
         vehicles, addVehicle, updateVehicle, deleteVehicle,
+        addVehicleMaintenance, deleteVehicleMaintenance,
         addVehicleDocument, updateVehicleDocument, deleteVehicleDocument,
         activeDocumentReminders, snoozeDocumentReminder, dismissDocumentReminder,
         serverUrl, saveServerUrl,
@@ -1005,6 +1133,8 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         login, signup, logout,
         supportLogin, supportListBusinesses, supportAccessBusiness, supportSetFrozen, supportSetLimits,
         forgotPassword, verifyResetOtp, resetPassword, updateMyEmail, resetDriverPassword,
+        updateDriverSalary, fetchDriverFinance,
+        addDriverTransaction, updateDriverTransaction, deleteDriverTransaction,
         refreshData,
       }}
     >

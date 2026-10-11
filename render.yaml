@@ -41,9 +41,12 @@ services:
         sync: false
       - key: DIRECT_URL
         sync: false
-      - key: GMAIL_USER
+      # SendGrid's HTTPS API, not SMTP — Render blocks outbound SMTP (ports 465/587) entirely on
+      # the free tier, which made the old Gmail-SMTP mailer hang indefinitely on every request
+      # that tried to send. See backend/src/services/mailer.ts.
+      - key: SENDGRID_API_KEY
         sync: false
-      - key: GMAIL_APP_PASSWORD
+      - key: SENDER_EMAIL
         sync: false
       # Master password for the cross-tenant /support console (see backend/src/routes/support.routes.ts).
       # Leaving this unset in the Render dashboard disables the feature entirely.

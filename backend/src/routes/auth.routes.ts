@@ -7,7 +7,7 @@ import * as sessionsRepo from '../db/repositories/sessions.repository.js';
 import * as auditLogsRepo from '../db/repositories/auditLogs.repository.js';
 import { issueSession } from '../services/authSession.js';
 import { hashPassword, verifyPassword } from '../services/passwords.js';
-import { getMailTransporter } from '../services/mailer.js';
+import { isMailConfigured, sendMail } from '../services/mailer.js';
 import * as brandingRepo from '../db/repositories/branding.repository.js';
 import { serializeUser, serializeGroup } from '../services/serializers.js';
 import {
@@ -15,7 +15,6 @@ import {
 } from '../services/util.js';
 import { signupLimiter, loginLimiter, forgotPasswordLimiter, resetPasswordLimiter } from '../middleware/rateLimit.js';
 import { HttpError } from '../middleware/errorHandler.js';
-import { config } from '../env.js';
 import type { Role, User, Group } from '@prisma/client';
 
 export const authRouter = Router();
@@ -30,6 +29,7 @@ authRouter.post('/signup', signupLimiter, async (req, res, next) => {
     const password = String(body.password || '');
     const email = String(body.email || '').trim().toLowerCase();
     const requestedGroupCode = normalizeGroupCode(body.groupCode);
+    const groupName = String(body.groupName || '').trim();
 
     if (!name || !phone) throw new HttpError(400, 'Name and phone are required');
     if (!password || password.length < 6) throw new HttpError(400, 'Password must be at least 6 characters');
@@ -43,12 +43,10 @@ authRouter.post('/signup', signupLimiter, async (req, res, next) => {
       }
 
       if (role === 'admin' && !group) {
+        if (!groupName) throw new HttpError(400, 'A business name is required');
         let groupCode = requestedGroupCode || generateGroupCode();
         while (await groupsRepo.existsByCode(groupCode, tx)) groupCode = generateGroupCode();
-        group = await groupsRepo.create(
-          { code: groupCode, name: String(body.groupName || 'Shivam Transport').trim() },
-          tx,
-        );
+        group = await groupsRepo.create({ code: groupCode, name: groupName }, tx);
       }
       // `group` is guaranteed non-null past this point: driver requires an existing group
       // (checked above) and admin either found one or just created one.
@@ -168,8 +166,7 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res, next
 
     const group = await groupsRepo.findByCode(groupCode);
     const user = group ? await usersRepo.findActiveAdminByGroupAndPhone(group.id, phone) : null;
-    const transporter = getMailTransporter();
-    if (group && user && user.email && transporter) {
+    if (group && user && user.email && isMailConfigured()) {
       const otp = String(crypto.randomInt(100000, 1000000));
       await usersRepo.setResetOtp(user.id, {
         resetOtpHash: hashPassword(otp),
@@ -178,11 +175,11 @@ authRouter.post('/forgot-password', forgotPasswordLimiter, async (req, res, next
       });
       try {
         const branding = await brandingRepo.get(group.id);
-        await transporter.sendMail({
-          from: `"${branding.companyName || 'Shivam Transport'}" <${config.gmailUser}>`,
+        await sendMail({
           to: user.email,
           subject: 'Your password reset code',
           text: `Your password reset code is ${otp}. It expires in 15 minutes.\n\nIf you didn't request this, you can safely ignore this email.`,
+          fromName: branding.companyName || 'Transport Manager',
         });
       } catch (error) {
         console.error('Failed to send password reset email:', error);

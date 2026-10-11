@@ -36,7 +36,7 @@ export interface Branding {
 }
 
 export const DEFAULT_BRANDING: Branding = {
-  companyName: 'Shivam Transport',
+  companyName: 'Transport Manager',
   tagline: 'Transport & Logistics Solutions',
   proprietorName: '',
   phone1: '',

@@ -535,7 +535,7 @@ const CustomerDetails = () => {
   };
 
   const buildBillText = () => {
-    const company = branding?.companyName || 'Shivam Transport';
+    const company = branding?.companyName || 'Transport Manager';
     const totals = getBillTotals(billTrips);
     const lineBreak = '─'.repeat(40);
     const tripLines = billTrips.map((trip, i) =>
@@ -581,7 +581,7 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
     try {
       await sendBillEmail(
         customer.email,
-        `Invoice ${billNo || ''} from ${branding?.companyName || 'Shivam Transport'}`,
+        `Invoice ${billNo || ''} from ${branding?.companyName || 'Transport Manager'}`,
         buildBillText(),
       );
       setDialogMessage({ type: 'success', text: `Bill emailed to ${customer.email}` });
@@ -662,7 +662,7 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
     // navy/gold look if the admin hasn't customized it yet).
     const primaryColor = branding?.primaryColor || '#0B2B5E';
     const accentColor = branding?.accentColor || '#F0B90B';
-    const companyName = (branding?.companyName || 'Shivam Transport').toUpperCase();
+    const companyName = (branding?.companyName || 'Transport Manager').toUpperCase();
     const tagline = branding?.tagline || 'Transport & Logistics Solutions';
     const proprietorLine = branding?.proprietorName ? `Prop.: ${branding.proprietorName}` : '';
     const phones = [branding?.phone1, branding?.phone2].filter(Boolean).join(' &nbsp;/&nbsp; ');
@@ -1781,7 +1781,7 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
               </Box>
               <Box sx={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontWeight: 800, color: branding?.primaryColor || '#0B2B5E', letterSpacing: '0.5px', textTransform: 'uppercase', fontSize: { xs: '1.4rem', sm: '2.1rem' } }}>
-                  {branding?.companyName || 'Shivam Transport'}
+                  {branding?.companyName || 'Transport Manager'}
                 </Typography>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#8a8a8a', letterSpacing: '2px', textTransform: 'uppercase', mt: 0.5, fontSize: { xs: '0.7rem', sm: '0.9rem' } }}>
                   {branding?.tagline || 'Transport & Logistics Solutions'}
@@ -1987,7 +1987,7 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
               </Box>
               <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-end' }, minWidth: '150px' }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#333', fontStyle: 'italic', mb: 1 }}>
-                  For {branding?.companyName || 'Shivam Transport'}
+                  For {branding?.companyName || 'Transport Manager'}
                 </Typography>
                 {branding?.signatureDataUrl ? (
                   <Box component="img" src={branding.signatureDataUrl} alt="Signature" sx={{ maxWidth: 140, maxHeight: 50, objectFit: 'contain', mb: 0.5 }} />

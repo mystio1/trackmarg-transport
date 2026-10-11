@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0B90B"/>
+      <stop offset="100%" stop-color="#D4A20A"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- Truck silhouette -->
+  <g fill="#1a1a2e">
+    <!-- Cargo box -->
+    <rect x="10" y="18" width="26" height="20" rx="2"/>
+    <!-- Cab -->
+    <path d="M36 24h10a4 4 0 0 1 4 4v10H36z"/>
+    <!-- Windshield highlight -->
+    <rect x="38" y="26" width="9" height="7" rx="1.5" fill="#F0B90B" opacity="0.5"/>
+    <!-- Wheels -->
+    <circle cx="20" cy="42" r="5" fill="#1a1a2e"/>
+    <circle cx="20" cy="42" r="2.5" fill="#F0B90B"/>
+    <circle cx="44" cy="42" r="5" fill="#1a1a2e"/>
+    <circle cx="44" cy="42" r="2.5" fill="#F0B90B"/>
+    <!-- Axle line -->
+    <rect x="8" y="38" width="46" height="3" rx="1.5"/>
+  </g>
+  <!-- TM text -->
+  <text x="23" y="35" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="14" fill="#fff" text-anchor="middle" dominant-baseline="central">TM</text>
+</svg>

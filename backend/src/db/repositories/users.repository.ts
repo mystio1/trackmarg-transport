@@ -106,6 +106,14 @@ export function updateEmail(id: string, email: string, client: DbClient = prisma
   return client.user.update({ where: { id }, data: { email } });
 }
 
+export function updateSalarySettings(
+  id: string,
+  data: { baseSalary: number; joiningDate: Date | null },
+  client: DbClient = prisma,
+): Promise<User> {
+  return client.user.update({ where: { id }, data });
+}
+
 export function updatePasswordHash(id: string, passwordHash: string, client: DbClient = prisma): Promise<User> {
   return client.user.update({ where: { id }, data: { passwordHash } });
 }

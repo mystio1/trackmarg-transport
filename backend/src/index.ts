@@ -18,7 +18,7 @@ const app = buildApp();
 app.listen(config.port, config.host, () => {
   const lanIp = getLanIp();
   console.log('\n========================================');
-  console.log('  SHIVAM TRANSPORT SERVER STARTED (v2/Express)');
+  console.log('  TRANSPORT MANAGER SERVER STARTED (v2/Express)');
   console.log('========================================');
   console.log(`  Admin (this laptop): http://localhost:${config.port}`);
   if (lanIp) {

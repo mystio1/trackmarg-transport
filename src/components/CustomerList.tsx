@@ -161,7 +161,7 @@ const CustomerList: React.FC = () => {
 
   const handleRemind = (customer: CustomerStat, event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    const company = branding?.companyName || 'Shivam Transport';
+    const company = branding?.companyName || 'Transport Manager';
     const message = `Hi ${customer.name}, this is a reminder from ${company} — you have a pending balance of Rs.${customer.pendingAmount.toFixed(2)}. Please arrange payment at your earliest convenience. Thank you!`;
     openWhatsApp(customer.phone, message);
   };

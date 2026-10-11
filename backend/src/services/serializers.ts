@@ -3,8 +3,8 @@
 // this is the one place that bridges Prisma's schema (groupId FKs, Decimal fields, camelCase
 // relation names) back to the legacy groupCode-keyed, plain-number shape the UI was built against.
 import type {
-  User, Group, Customer, AdvanceEntry, Trip, Bill, BillTripLine, Vehicle, VehicleDocument,
-  TripEditRequest, Prisma,
+  User, Group, Customer, AdvanceEntry, Trip, Bill, BillTripLine, Vehicle, VehicleDocument, VehicleMaintenance,
+  TripEditRequest, DriverTransaction, DriverTransactionCategory, Prisma,
 } from '@prisma/client';
 
 function dec(value: Prisma.Decimal | number): number {
@@ -25,6 +25,8 @@ export function serializeUser(user: User, groupCode: string) {
     email: user.email || undefined,
     userCode: user.userCode || undefined,
     active: user.active,
+    baseSalary: dec(user.baseSalary),
+    joiningDate: iso(user.joiningDate),
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
   };
@@ -45,6 +47,24 @@ export function serializeAdvanceEntry(entry: AdvanceEntry) {
     deletedAt: iso(entry.deletedAt),
     usedInBillNo: entry.usedInBillNo || undefined,
   };
+}
+
+export function serializeDriverTransaction(entry: DriverTransaction & { category?: { name: string } | null }) {
+  return {
+    id: entry.id,
+    categoryId: entry.categoryId || undefined,
+    categoryName: entry.category?.name ?? 'Other',
+    amount: dec(entry.amount),
+    note: entry.note,
+    date: entry.date.toISOString(),
+    deductFromSalary: entry.deductFromSalary,
+    businessEffect: entry.businessEffect,
+    createdAt: entry.createdAt.toISOString(),
+  };
+}
+
+export function serializeDriverTransactionCategory(category: DriverTransactionCategory) {
+  return { id: category.id, name: category.name, isDefault: category.isDefault };
 }
 
 export function serializeCustomer(
@@ -151,15 +171,34 @@ export function serializeVehicleDocument(document: VehicleDocument) {
   };
 }
 
+export function serializeVehicleMaintenance(entry: VehicleMaintenance) {
+  return {
+    id: entry.id,
+    type: entry.type,
+    date: entry.date.toISOString(),
+    odometer: entry.odometer ?? undefined,
+    cost: dec(entry.cost),
+    notes: entry.notes || undefined,
+    createdAt: entry.createdAt.toISOString(),
+  };
+}
+
 export function serializeVehicle(
-  vehicle: Vehicle & { documents?: VehicleDocument[] },
+  vehicle: Vehicle & {
+    documents?: VehicleDocument[];
+    maintenance?: VehicleMaintenance[];
+    assignedDriver?: { id: string; name: string } | null;
+  },
   groupCode: string,
 ) {
   return {
     id: vehicle.id,
     groupCode,
     vehicleNumber: vehicle.vehicleNumber,
+    assignedDriverId: vehicle.assignedDriverId || undefined,
+    assignedDriverName: vehicle.assignedDriver?.name || undefined,
     documents: (vehicle.documents || []).map(serializeVehicleDocument),
+    maintenance: (vehicle.maintenance || []).map(serializeVehicleMaintenance),
     createdAt: vehicle.createdAt.toISOString(),
     updatedAt: vehicle.updatedAt.toISOString(),
   };

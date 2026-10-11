@@ -1,6 +1,6 @@
-# Shivam Transport Application
+# Transport Manager Application
 
-Customer, trip and billing management app for Shivam Transport — built with React and a
+Customer, trip and billing management app for Transport Manager — built with React and a
 self-hosted Node.js server (no cloud storage bills). Admin runs the server on one PC; drivers
 and the admin connect to it from their phones (via LAN or a Cloudflare Tunnel for access from
 anywhere) using the mobile app built with Capacitor.

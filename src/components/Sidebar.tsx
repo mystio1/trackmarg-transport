@@ -10,7 +10,7 @@ import {
   Divider,
   useTheme,
 } from '@mui/material';
-import { Dashboard, People, AssignmentTurnedIn, Send, Settings, LocalShipping, AddCircle, ReceiptLong, EventNote } from '@mui/icons-material';
+import { Dashboard, People, AssignmentTurnedIn, Send, Settings, LocalShipping, AddCircle, ReceiptLong, EventNote, Garage } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
@@ -35,6 +35,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
           { text: 'Dashboard', icon: <Dashboard />, path: '/' },
           { text: 'Customers', icon: <People />, path: '/customers' },
           { text: 'Drivers', icon: <LocalShipping />, path: '/drivers' },
+          { text: 'Vehicles', icon: <Garage />, path: '/vehicles' },
           { text: 'Add Trip', icon: <AddCircle />, path: '/add-trip' },
           {
             text: `Approvals${pendingTrips.length ? ` (${pendingTrips.length})` : ''}`,
@@ -96,7 +97,9 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
       <Divider sx={{ borderColor: 'divider' }} />
       <List sx={{ px: 2, pt: 3 }}>
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+          const isActive = location.pathname === item.path
+            || (item.path !== '/' && location.pathname.startsWith(item.path))
+            || (item.path === '/vehicles' && location.pathname.startsWith('/vehicle/'));
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
               <ListItemButton

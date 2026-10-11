@@ -48,7 +48,7 @@ const emptyTripFields = {
 // the trip as "pending" for the admin to approve, rather than adding it already-approved.
 const DriverSubmitTrip = () => {
   const theme = useTheme();
-  const { customers, submitDriverTrip } = useAppContext();
+  const { customers, vehicles, submitDriverTrip } = useAppContext();
   const [pickedExisting, setPickedExisting] = useState<Customer | null>(null);
   const [draftCustomer, setDraftCustomer] = useState<DraftCustomer | null>(null);
   const selectedCustomer = pickedExisting || draftCustomer;
@@ -182,12 +182,14 @@ const DriverSubmitTrip = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Vehicle Number"
-                placeholder="e.g. MH12AB1234"
-                value={tripFields.vehicleNumber}
-                onChange={e => updateField('vehicleNumber', e.target.value.toUpperCase())}
+              <Autocomplete
+                freeSolo
+                options={vehicles.map(v => v.vehicleNumber)}
+                inputValue={tripFields.vehicleNumber}
+                onInputChange={(_e, value) => updateField('vehicleNumber', value.toUpperCase())}
+                renderInput={params => (
+                  <TextField {...params} fullWidth label="Vehicle Number" placeholder="e.g. MH12AB1234" />
+                )}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
