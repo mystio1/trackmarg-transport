@@ -173,6 +173,8 @@ const CustomerDetails = () => {
   const [sharingBill, setSharingBill] = useState(false);
   const [savingBillRecord, setSavingBillRecord] = useState(false);
   const [printingBill, setPrintingBill] = useState(false);
+  const [saveBillPrompt, setSaveBillPrompt] = useState<{ action: 'print' | 'whatsapp' | 'email' } | null>(null);
+  const [saveBillPromptBillNo, setSaveBillPromptBillNo] = useState('');
 
   // Find customer by ID
   const customer = customers.find(c => c.id === id);
@@ -919,7 +921,70 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
     }
   };
 
-  const handlePrintBill = async () => {
+  const promptSaveBill = (action: 'print' | 'whatsapp' | 'email') => {
+    setSaveBillPromptBillNo(billNo);
+    setSaveBillPrompt({ action });
+  };
+
+  const handleSaveBillPromptProceed = async (shouldSave: boolean) => {
+    const action = saveBillPrompt?.action;
+    if (!action) return;
+
+    if (saveBillPromptBillNo.trim()) setBillNo(saveBillPromptBillNo.trim());
+
+    setSaveBillPrompt(null);
+
+    if (shouldSave) {
+      setSavingBillRecord(true);
+      setDialogMessage(null);
+      try {
+        const totals = getBillTotals(billTrips);
+        const finalNetPayable = totals.showBreakdown ? totals.netPayable : totals.subTotal;
+        const useBillNo = saveBillPromptBillNo.trim() || billNo || '01';
+        await saveBill({
+          customerId: customer!.id,
+          billNo: useBillNo,
+          billDate: billDate ? new Date(billDate).toISOString() : new Date().toISOString(),
+          isGstBill,
+          gstPercent: totals.gstPct,
+          discount: totals.discount,
+          subTotal: totals.subTotal,
+          received: totals.received,
+          gstAmount: totals.gstAmount,
+          grandTotal: totals.grandTotal,
+          advanceApplied: totals.advanceApplied,
+          netPayable: finalNetPayable,
+          amountInWords: amountInWords.trim() || `${convertNumberToWords(Math.round(finalNetPayable))} Rupees Only`,
+          trips: billTrips.map(t => ({
+            tripId: t.id,
+            date: t.date,
+            pickupLocation: t.pickupLocation,
+            dropLocation: t.dropLocation,
+            amount: t.amount,
+            paidAmount: t.paidAmount || 0,
+          })),
+          customerPhone: customer!.phone || '',
+          customerAddress: customer!.address || '',
+          customerGst: customerGst.trim(),
+          bankName: bankName.trim(),
+          bankBranch: branch.trim(),
+          accountNumber: accountNumber.trim(),
+          ifscCode: ifscCode.trim(),
+        });
+        toast.success('Bill saved to My Bills.');
+      } catch (error) {
+        setDialogMessage({ type: 'error', text: error instanceof Error ? error.message : 'Could not save the bill' });
+      } finally {
+        setSavingBillRecord(false);
+      }
+    }
+
+    if (action === 'print') await executePrintBill();
+    else if (action === 'whatsapp') await handleWhatsAppBill();
+    else if (action === 'email') await handleEmailBill();
+  };
+
+  const executePrintBill = async () => {
     setDialogMessage(null);
     setPrintingBill(true);
     try {
@@ -934,13 +999,17 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
       : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const totals = getBillTotals(billTrips);
     const html = buildBillHtml(billTrips, {
-      billNoLabel: billNo || '01',
+      billNoLabel: saveBillPromptBillNo.trim() || billNo || '01',
       billDateLabel: formattedBillDate,
       totals,
       amountWordsOverride: amountInWords,
     });
     openPrintWindow(html, `Invoice_${customer.name}`);
     setPrintingBill(false);
+  };
+
+  const handlePrintBill = async () => {
+    promptSaveBill('print');
   };
 
   // Trip History → "Download Bill": a standalone single-trip invoice, independent of whatever
@@ -2055,7 +2124,7 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
 
           <Button
             variant="outlined"
-            onClick={handleWhatsAppBill}
+            onClick={() => promptSaveBill('whatsapp')}
             disabled={sharingBill}
             startIcon={<WhatsApp />}
             sx={{ fontWeight: 700, color: '#25D366', borderColor: '#25D366' }}
@@ -2066,7 +2135,7 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
           {customer?.email && (
             <Button
               variant="outlined"
-              onClick={handleEmailBill}
+              onClick={() => promptSaveBill('email')}
               disabled={sendingEmail}
               startIcon={<Email />}
               sx={{ fontWeight: 700 }}
@@ -2077,13 +2146,56 @@ ${branding?.footerNote || 'Thank you for your business!'}`;
 
           <Button
             variant="contained"
-            onClick={handlePrintBill}
+            onClick={() => promptSaveBill('print')}
             color="primary"
             startIcon={<Print />}
             sx={{ fontWeight: 700, color: '#000' }}
           >
             Print / Save PDF
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Save Bill Prompt — shown before Print/WhatsApp/Email */}
+      <Dialog open={Boolean(saveBillPrompt)} onClose={() => setSaveBillPrompt(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Save Bill?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            Would you like to save this bill to your records? You can also set an optional bill number.
+          </Typography>
+          <TextField
+            label="Bill Number (optional)"
+            value={saveBillPromptBillNo}
+            onChange={e => setSaveBillPromptBillNo(e.target.value)}
+            fullWidth
+            size="small"
+            placeholder={billNo || '01'}
+            sx={{ mb: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexDirection: 'column' }}>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={() => handleSaveBillPromptProceed(true)}
+            disabled={savingBillRecord}
+            startIcon={<Bookmark />}
+            sx={{ fontWeight: 700, color: 'primary.contrastText' }}
+          >
+            {savingBillRecord ? 'Saving...' : 'Yes, Save & Continue'}
+          </Button>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => handleSaveBillPromptProceed(false)}
+            color="warning"
+            sx={{ fontWeight: 600 }}
+          >
+            No, Just Generate PDF
+          </Button>
+          <Typography variant="caption" sx={{ color: 'text.secondary', textAlign: 'center', mt: 0.5 }}>
+            If you choose "No", the bill will not be saved in your records or database.
+          </Typography>
         </DialogActions>
       </Dialog>
 
