@@ -62,7 +62,7 @@ const DriverSubmitTrip = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const updateField = (name: keyof typeof emptyTripFields, value: string) =>
+  const updateField = (name: keyof ReturnType<typeof defaultTripFields>, value: string) =>
     setTripFields(prev => ({ ...prev, [name]: value }));
 
   const handleCreateCustomer = () => {
