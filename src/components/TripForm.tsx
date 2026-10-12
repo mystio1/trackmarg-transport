@@ -52,6 +52,11 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
   );
   const [selectedDriver, setSelectedDriver] = useState<DriverOption | null>(null);
 
+  const getDriverVehicle = (driverId: string | null) => {
+    if (!driverId || driverId === 'self') return null;
+    return vehicles.find(v => v.assignedDriverId === driverId) || null;
+  };
+
   const [tripData, setTripData] = useState<Omit<Trip, 'id'>>({
     customerId,
     date: new Date().toISOString(),
@@ -68,7 +73,6 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
   const [errors, setErrors] = useState({
     pickupLocation: '',
     dropLocation: '',
-    vehicleType: '',
     advanceAmount: '',
     amount: '',
     driver: '',
@@ -124,7 +128,6 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
     const newErrors = {
       pickupLocation: '',
       dropLocation: '',
-      vehicleType: '',
       advanceAmount: '',
       amount: '',
       driver: '',
@@ -142,11 +145,6 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
 
     if (!tripData.dropLocation.trim()) {
       newErrors.dropLocation = 'Drop location is required';
-      valid = false;
-    }
-
-    if (!tripData.vehicleType.trim()) {
-      newErrors.vehicleType = 'Vehicle type is required';
       valid = false;
     }
 
@@ -183,6 +181,7 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
         vehicleType: '',
         vehicleNumber: '',
         materialType: '',
+        advanceAmount: 0,
         amount: 0,
         isPaid: false,
       });
@@ -218,7 +217,13 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
               value={selectedDriver}
               onChange={(_, value) => {
                 setSelectedDriver(value);
-                if (value) setErrors(prev => ({ ...prev, driver: '' }));
+                if (value) {
+                  setErrors(prev => ({ ...prev, driver: '' }));
+                  const assigned = getDriverVehicle(value.id);
+                  if (assigned) {
+                    setTripData(prev => ({ ...prev, vehicleNumber: assigned.vehicleNumber }));
+                  }
+                }
               }}
               renderInput={params => (
                 <TextField
@@ -253,19 +258,6 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
                 }}
               />
             </LocalizationProvider>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Vehicle Type"
-              name="vehicleType"
-              value={tripData.vehicleType}
-              onChange={handleInputChange}
-              variant="outlined"
-              error={!!errors.vehicleType}
-              helperText={errors.vehicleType}
-            />
           </Grid>
 
           <Grid item xs={12} sm={6}>
@@ -309,7 +301,7 @@ const TripForm: React.FC<TripFormProps> = ({ customerId, onTripAdded }) => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Material Type"
+              label="Material Type (Optional)"
               name="materialType"
               value={tripData.materialType || ''}
               onChange={handleInputChange}

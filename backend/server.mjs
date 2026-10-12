@@ -430,7 +430,6 @@ function validateTripInput(body) {
     errors.push('Customer is required');
   if (!String(body.pickupLocation || '').trim()) errors.push('Pickup location is required');
   if (!String(body.dropLocation || '').trim()) errors.push('Drop location is required');
-  if (!String(body.vehicleType || '').trim()) errors.push('Vehicle type is required');
   if (toNumber(body.amount) <= 0) errors.push('Amount must be greater than zero');
   if (toNumber(body.advanceAmount) < 0) errors.push('Advance amount cannot be negative');
   return errors;

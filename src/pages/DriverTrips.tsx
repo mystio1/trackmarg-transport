@@ -247,7 +247,7 @@ const DriverTrips = () => {
                 <TextField label="Trip Date" type="date" value={editForm.date} onChange={e => updateEditField('date', e.target.value)} fullWidth InputLabelProps={{ shrink: true }} />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <TextField label="Vehicle Type" value={editForm.vehicleType} onChange={e => updateEditField('vehicleType', e.target.value)} fullWidth />
+                <TextField label="Vehicle Type (Optional)" value={editForm.vehicleType} onChange={e => updateEditField('vehicleType', e.target.value)} fullWidth />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField label="Vehicle Number" value={editForm.vehicleNumber} onChange={e => updateEditField('vehicleNumber', e.target.value.toUpperCase())} fullWidth />

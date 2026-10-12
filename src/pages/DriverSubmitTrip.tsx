@@ -30,17 +30,17 @@ import type { Customer } from '../types';
 type DraftCustomer = { name: string; phone: string; address: string };
 const EMPTY_NEW_CUSTOMER: DraftCustomer = { name: '', phone: '', address: '' };
 
-const emptyTripFields = {
+const defaultTripFields = (vehicleNumber = '') => ({
   date: new Date(),
   pickupLocation: '',
   dropLocation: '',
   vehicleType: '',
-  vehicleNumber: '',
+  vehicleNumber,
   materialType: '',
   amount: '',
   advanceAmount: '',
   isPaid: false,
-};
+});
 
 // Mirrors the admin's "Add Trip" page (customer picker + New Customer dialog + identical trip
 // fields) — the only difference under the hood is that this goes through submitDriverTrip, which
@@ -48,7 +48,8 @@ const emptyTripFields = {
 // the trip as "pending" for the admin to approve, rather than adding it already-approved.
 const DriverSubmitTrip = () => {
   const theme = useTheme();
-  const { customers, vehicles, submitDriverTrip } = useAppContext();
+  const { customers, vehicles, submitDriverTrip, user } = useAppContext();
+  const assignedVehicle = vehicles.find(v => v.assignedDriverId === user?.id);
   const [pickedExisting, setPickedExisting] = useState<Customer | null>(null);
   const [draftCustomer, setDraftCustomer] = useState<DraftCustomer | null>(null);
   const selectedCustomer = pickedExisting || draftCustomer;
@@ -57,7 +58,7 @@ const DriverSubmitTrip = () => {
   const [newCustomer, setNewCustomer] = useState(EMPTY_NEW_CUSTOMER);
   const [newCustomerError, setNewCustomerError] = useState('');
 
-  const [tripFields, setTripFields] = useState(emptyTripFields);
+  const [tripFields, setTripFields] = useState(() => defaultTripFields(assignedVehicle?.vehicleNumber || ''));
   const [message, setMessage] = useState<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -103,7 +104,7 @@ const DriverSubmitTrip = () => {
       });
       setPickedExisting(null);
       setDraftCustomer(null);
-      setTripFields(emptyTripFields);
+      setTripFields(defaultTripFields(assignedVehicle?.vehicleNumber || ''));
       setMessage(
         result.queued
           ? { type: 'warning', text: "No connection right now — saved on your phone and will send automatically once you're back online." }
@@ -174,14 +175,6 @@ const DriverSubmitTrip = () => {
               </LocalizationProvider>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Vehicle Type"
-                value={tripFields.vehicleType}
-                onChange={e => updateField('vehicleType', e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
               <Autocomplete
                 freeSolo
                 options={vehicles.map(v => v.vehicleNumber)}
@@ -211,7 +204,7 @@ const DriverSubmitTrip = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Material Type"
+                label="Material Type (Optional)"
                 value={tripFields.materialType}
                 onChange={e => updateField('materialType', e.target.value)}
               />

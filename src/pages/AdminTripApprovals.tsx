@@ -201,8 +201,8 @@ const AdminTripApprovals = () => {
                       Driver: {trip.driverName || 'Unknown'} | {new Date(trip.date).toLocaleDateString('en-IN')}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                      {trip.pickupLocation} to {trip.dropLocation} | Vehicle: {trip.vehicleType}
-                      {trip.vehicleNumber ? ` (${trip.vehicleNumber})` : ''}
+                      {trip.pickupLocation} to {trip.dropLocation}
+                      {(trip.vehicleType || trip.vehicleNumber) ? ` | Vehicle: ${trip.vehicleType || ''}${trip.vehicleNumber ? ` (${trip.vehicleNumber})` : ''}` : ''}
                     </Typography>
                     {trip.materialType && (
                       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -330,7 +330,7 @@ const AdminTripApprovals = () => {
               <TextField label="Trip Date" type="date" value={editForm.date} onChange={event => setEditForm(prev => ({ ...prev, date: event.target.value }))} fullWidth InputLabelProps={{ shrink: true }} />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField label="Vehicle Type" value={editForm.vehicleType} onChange={event => setEditForm(prev => ({ ...prev, vehicleType: event.target.value }))} fullWidth />
+              <TextField label="Vehicle Type (Optional)" value={editForm.vehicleType} onChange={event => setEditForm(prev => ({ ...prev, vehicleType: event.target.value }))} fullWidth />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField label="Vehicle Number" value={editForm.vehicleNumber} onChange={event => setEditForm(prev => ({ ...prev, vehicleNumber: event.target.value.toUpperCase() }))} fullWidth />
