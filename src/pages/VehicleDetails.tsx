@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Paper, Avatar, IconButton, Chip, useTheme, Button, Tabs, Tab, TextField,
-  MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete,
+  MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, InputAdornment,
 } from '@mui/material';
 import {
   ArrowBack, LocalShipping, Person, Edit, DeleteOutline, Add, Build, Speed, LocationOn,
-  CalendarMonth, VerifiedUser, WarningAmber, ErrorOutline, Description,
+  CalendarMonth, VerifiedUser, WarningAmber, ErrorOutline, Description, Search,
 } from '@mui/icons-material';
 import { useAppContext } from '../context/AppContext';
 import { useToast } from '../components/ToastProvider';
@@ -15,6 +15,7 @@ import type { VehicleDocument } from '../types';
 import { documentStatus, DEFAULT_REMINDER_DAYS, type DocumentStatus } from '../utils/documentStatus';
 import { currentOdometer, maintenanceCost, tripIncome, tripsForVehicle } from '../utils/vehicleStats';
 
+const VEHICLE_TYPES = ['Truck', 'Tempo', 'Trailer', 'Tanker', 'Pickup', 'Mini Truck', 'Container'];
 const MAINTENANCE_TYPES = [
   'Tyre Change', 'Engine Oil Change', 'General Service', 'Brake Work', 'Battery', 'Clutch',
   'Wheel Alignment', 'Repair',
@@ -56,9 +57,11 @@ const VehicleDetails = () => {
 
   const vehicle = vehicles.find(v => v.id === id);
   const [tab, setTab] = useState(0);
+  const [maintenanceSearch, setMaintenanceSearch] = useState('');
 
   const [numberDialogOpen, setNumberDialogOpen] = useState(false);
   const [numberDraft, setNumberDraft] = useState('');
+  const [typeDraft, setTypeDraft] = useState('');
   const [numberError, setNumberError] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [assigning, setAssigning] = useState(false);
@@ -114,8 +117,8 @@ const VehicleDetails = () => {
     setSaving(true);
     setNumberError('');
     try {
-      await updateVehicle(vehicle.id, { vehicleNumber });
-      toast.success('Number plate updated.');
+      await updateVehicle(vehicle.id, { vehicleNumber, vehicleType: typeDraft.trim() });
+      toast.success('Vehicle updated.');
       setNumberDialogOpen(false);
     } catch (error) {
       setNumberError(error instanceof Error ? error.message : 'Could not update the number plate');
@@ -248,6 +251,11 @@ const VehicleDetails = () => {
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '1px' }}>
               {vehicle.vehicleNumber}
+              {vehicle.vehicleType && (
+                <Typography component="span" variant="body1" sx={{ ml: 1, color: 'text.secondary', fontWeight: 500 }}>
+                  ({vehicle.vehicleType})
+                </Typography>
+              )}
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {vehicle.assignedDriverName ? `Driven by ${vehicle.assignedDriverName}` : 'No driver assigned'}
@@ -257,7 +265,7 @@ const VehicleDetails = () => {
             <Button
               variant="outlined"
               startIcon={<Edit />}
-              onClick={() => { setNumberDraft(vehicle.vehicleNumber); setNumberError(''); setNumberDialogOpen(true); }}
+              onClick={() => { setNumberDraft(vehicle.vehicleNumber); setTypeDraft(vehicle.vehicleType || ''); setNumberError(''); setNumberDialogOpen(true); }}
             >
               Edit
             </Button>
@@ -345,10 +353,28 @@ const VehicleDetails = () => {
             )
           )}
 
-          {tab === 1 && (
+          {tab === 1 && (() => {
+            const q = maintenanceSearch.toLowerCase().trim();
+            const filtered = q
+              ? vehicle.maintenance.filter(e =>
+                  e.type.toLowerCase().includes(q)
+                  || String(e.cost).includes(q)
+                  || (e.notes && e.notes.toLowerCase().includes(q)))
+              : vehicle.maintenance;
+            return (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button variant="contained" startIcon={<Add />} onClick={openMaintenance} sx={{ color: 'primary.contrastText', fontWeight: 700 }}>
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                {vehicle.maintenance.length > 0 && (
+                  <TextField
+                    size="small"
+                    placeholder="Search item, cost, notes…"
+                    value={maintenanceSearch}
+                    onChange={e => setMaintenanceSearch(e.target.value)}
+                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> } }}
+                    sx={{ minWidth: 180, flex: 1, maxWidth: 320 }}
+                  />
+                )}
+                <Button variant="contained" startIcon={<Add />} onClick={openMaintenance} sx={{ color: 'primary.contrastText', fontWeight: 700, flexShrink: 0 }}>
                   Add Maintenance
                 </Button>
               </Box>
@@ -359,8 +385,10 @@ const VehicleDetails = () => {
                   title="No maintenance logged yet"
                   description="Record tyre changes, services and repairs with the odometer reading and cost."
                 />
+              ) : filtered.length === 0 ? (
+                <Typography sx={{ color: 'text.secondary', textAlign: 'center', py: 4 }}>No results for "{maintenanceSearch}"</Typography>
               ) : (
-                vehicle.maintenance.map(entry => (
+                filtered.map(entry => (
                   <Box key={entry.id} sx={rowSx}>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: 14 }}>{entry.type}</Typography>
@@ -390,7 +418,8 @@ const VehicleDetails = () => {
                 ))
               )}
             </Box>
-          )}
+            );
+          })()}
 
           {tab === 2 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -435,19 +464,29 @@ const VehicleDetails = () => {
 
       {/* Edit number plate */}
       <Dialog open={numberDialogOpen} onClose={() => setNumberDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Edit Number Plate</DialogTitle>
+        <DialogTitle>Edit Vehicle</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            required
-            label="Number Plate"
-            fullWidth
-            value={numberDraft}
-            onChange={e => setNumberDraft(e.target.value.toUpperCase())}
-            error={Boolean(numberError)}
-            helperText={numberError || 'Trips are matched to this vehicle by number plate.'}
-            sx={{ mt: 1 }}
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <TextField
+              autoFocus
+              required
+              label="Number Plate"
+              fullWidth
+              value={numberDraft}
+              onChange={e => setNumberDraft(e.target.value.toUpperCase())}
+              error={Boolean(numberError)}
+              helperText={numberError || 'Trips are matched to this vehicle by number plate.'}
+            />
+            <Autocomplete
+              freeSolo
+              options={VEHICLE_TYPES}
+              inputValue={typeDraft}
+              onInputChange={(_e, value) => setTypeDraft(value)}
+              renderInput={params => (
+                <TextField {...params} label="Vehicle Type (Optional)" placeholder="e.g. Truck, Tempo" fullWidth />
+              )}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setNumberDialogOpen(false)}>Cancel</Button>

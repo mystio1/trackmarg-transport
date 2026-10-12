@@ -227,11 +227,11 @@ interface AppContextType {
   vehicles: Vehicle[];
   addVehicle: (
     vehicleNumber: string,
-    extras?: { assignedDriverId?: string; documents?: { label: string; expiryDate: string }[] },
+    extras?: { vehicleType?: string; assignedDriverId?: string; documents?: { label: string; expiryDate: string }[] },
   ) => Promise<Vehicle>;
   updateVehicle: (
     vehicleId: string,
-    updates: { vehicleNumber?: string; assignedDriverId?: string | null },
+    updates: { vehicleNumber?: string; vehicleType?: string; assignedDriverId?: string | null },
   ) => Promise<void>;
   addVehicleMaintenance: (
     vehicleId: string,
@@ -971,7 +971,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   // ── Vehicles & document-expiry reminders ────────────────────────────────
   const addVehicle = async (
     vehicleNumber: string,
-    extras: { assignedDriverId?: string; documents?: { label: string; expiryDate: string }[] } = {},
+    extras: { vehicleType?: string; assignedDriverId?: string; documents?: { label: string; expiryDate: string }[] } = {},
   ): Promise<Vehicle> => {
     const response = await apiRequest<{ vehicle: Vehicle }>('/api/vehicles', {
       method: 'POST',
@@ -983,7 +983,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
   const updateVehicle = async (
     vehicleId: string,
-    updates: { vehicleNumber?: string; assignedDriverId?: string | null },
+    updates: { vehicleNumber?: string; vehicleType?: string; assignedDriverId?: string | null },
   ) => {
     const response = await apiRequest<{ vehicle: Vehicle }>(`/api/vehicles/${vehicleId}`, {
       method: 'PATCH',

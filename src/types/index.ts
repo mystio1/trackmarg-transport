@@ -277,6 +277,7 @@ export interface Vehicle {
   id: string;
   groupCode?: string;
   vehicleNumber: string;
+  vehicleType?: string;
   // The driver the admin has put on this truck — an admin-side record only.
   assignedDriverId?: string;
   assignedDriverName?: string;

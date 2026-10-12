@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  Box, Typography, Card, CardContent, Avatar, List, Paper, TextField, InputAdornment, IconButton,
+  Autocomplete, Box, Typography, Card, CardContent, Avatar, List, Paper, TextField, InputAdornment, IconButton,
   Chip, useTheme, Button, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem,
 } from '@mui/material';
 import {
@@ -25,8 +25,11 @@ const ADD_FORM_DOCUMENTS = [
 
 type DocKey = typeof ADD_FORM_DOCUMENTS[number]['key'];
 
+const VEHICLE_TYPES = ['Truck', 'Tempo', 'Trailer', 'Tanker', 'Pickup', 'Mini Truck', 'Container'];
+
 const EMPTY_FORM = {
   vehicleNumber: '',
+  vehicleType: '',
   assignedDriverId: '',
   puc: '',
   insurance: '',
@@ -87,6 +90,7 @@ const VehicleList = () => {
     setFormError('');
     try {
       const vehicle = await addVehicle(vehicleNumber, {
+        vehicleType: form.vehicleType.trim() || undefined,
         assignedDriverId: form.assignedDriverId || undefined,
         documents,
       });
@@ -227,6 +231,11 @@ const VehicleList = () => {
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', letterSpacing: '0.5px' }}>
                     {vehicle.vehicleNumber}
+                    {vehicle.vehicleType && (
+                      <Typography component="span" variant="body2" sx={{ ml: 1, color: 'text.secondary', fontWeight: 500 }}>
+                        ({vehicle.vehicleType})
+                      </Typography>
+                    )}
                   </Typography>
                   <Box sx={{ display: 'flex', columnGap: 2, rowGap: 0.25, mt: 0.5, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -279,6 +288,15 @@ const VehicleList = () => {
               value={form.vehicleNumber}
               onChange={e => setForm(prev => ({ ...prev, vehicleNumber: e.target.value.toUpperCase() }))}
               error={Boolean(formError) && !form.vehicleNumber.trim()}
+            />
+            <Autocomplete
+              freeSolo
+              options={VEHICLE_TYPES}
+              inputValue={form.vehicleType}
+              onInputChange={(_e, value) => setForm(prev => ({ ...prev, vehicleType: value }))}
+              renderInput={params => (
+                <TextField {...params} label="Vehicle Type (Optional)" placeholder="e.g. Truck, Tempo, Trailer" fullWidth />
+              )}
             />
             <TextField
               select

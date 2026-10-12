@@ -195,6 +195,7 @@ export function serializeVehicle(
     id: vehicle.id,
     groupCode,
     vehicleNumber: vehicle.vehicleNumber,
+    vehicleType: vehicle.vehicleType || undefined,
     assignedDriverId: vehicle.assignedDriverId || undefined,
     assignedDriverName: vehicle.assignedDriver?.name || undefined,
     documents: (vehicle.documents || []).map(serializeVehicleDocument),

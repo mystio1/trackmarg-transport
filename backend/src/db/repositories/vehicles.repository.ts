@@ -35,7 +35,7 @@ export function findByIdAndGroup(
 export async function create(
   groupId: string,
   vehicleNumber: string,
-  extras: { assignedDriverId?: string | null; documents?: NewVehicleDocument[] } = {},
+  extras: { vehicleType?: string; assignedDriverId?: string | null; documents?: NewVehicleDocument[] } = {},
   client: DbClient = prisma,
 ): Promise<VehicleWithDocuments | 'duplicate'> {
   try {
@@ -43,6 +43,7 @@ export async function create(
       data: {
         groupId,
         vehicleNumber,
+        vehicleType: extras.vehicleType || '',
         assignedDriverId: extras.assignedDriverId ?? null,
         documents: extras.documents?.length ? { create: extras.documents } : undefined,
       },
@@ -57,7 +58,7 @@ export async function create(
 export async function update(
   id: string,
   groupId: string,
-  patch: { vehicleNumber?: string; assignedDriverId?: string | null },
+  patch: { vehicleNumber?: string; vehicleType?: string; assignedDriverId?: string | null },
   client: DbClient = prisma,
 ): Promise<VehicleWithDocuments | null | 'duplicate'> {
   const existing = await client.vehicle.findFirst({ where: { id, groupId } });

@@ -377,6 +377,7 @@ model Vehicle {
   groupId       String
   group         Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
   vehicleNumber String
+  vehicleType   String            @default("")
   // The driver the admin has put on this truck (Vehicles > vehicle > Assigned Driver). Purely an
   // admin-side record — a driver can still submit a trip for any vehicle number. SetNull so
   // removing a driver just leaves the truck unassigned.

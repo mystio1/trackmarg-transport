@@ -56,8 +56,9 @@ vehiclesRouter.post('/', requireRole('admin'), async (req, res, next) => {
         reminderDaysBefore: Math.max(0, Math.round(toNumber(doc.reminderDaysBefore) || 7)),
       };
     });
+    const vehicleType = String(req.body?.vehicleType || '').trim();
     const assignedDriverId = await resolveAssignedDriverId(req.body?.assignedDriverId, req.auth!.groupId);
-    const result = await vehiclesRepo.create(req.auth!.groupId, vehicleNumber, { assignedDriverId, documents });
+    const result = await vehiclesRepo.create(req.auth!.groupId, vehicleNumber, { vehicleType, assignedDriverId, documents });
     if (result === 'duplicate') throw new HttpError(409, 'A vehicle with this number already exists');
     await auditLogsRepo.create(prisma, req.auth!.user, req.auth!.groupId, 'vehicle.create', result.id, { vehicleNumber });
     const serialized = serializeVehicle(result, req.auth!.groupCode);
@@ -69,11 +70,14 @@ vehiclesRouter.post('/', requireRole('admin'), async (req, res, next) => {
 vehiclesRouter.patch('/:id', requireRole('admin'), async (req, res, next) => {
   try {
     const body = req.body ?? {};
-    const patch: { vehicleNumber?: string; assignedDriverId?: string | null } = {};
+    const patch: { vehicleNumber?: string; vehicleType?: string; assignedDriverId?: string | null } = {};
     if (Object.prototype.hasOwnProperty.call(body, 'vehicleNumber')) {
       const vehicleNumber = String(body.vehicleNumber || '').trim().toUpperCase();
       if (!vehicleNumber) throw new HttpError(400, 'Vehicle number is required');
       patch.vehicleNumber = vehicleNumber;
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'vehicleType')) {
+      patch.vehicleType = String(body.vehicleType || '').trim();
     }
     if (Object.prototype.hasOwnProperty.call(body, 'assignedDriverId')) {
       patch.assignedDriverId = await resolveAssignedDriverId(body.assignedDriverId, req.auth!.groupId);
